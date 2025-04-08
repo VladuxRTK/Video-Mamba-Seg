@@ -1,0 +1,80 @@
+# Binary Video Segmentation Configuration
+# configs/binary_seg.yaml
+
+# Paths configuration
+paths:
+  davis_root: "/mnt/c/Datasets/DAVIS"  # Path to DAVIS dataset
+  checkpoints: "checkpoints/binary_seg"  # Where to save model checkpoints
+  logs: "logs/binary_seg"  # Where to save training logs
+  visualizations: "visualizations/binary_seg"  # Where to save visualizations
+
+# Model configuration
+model:
+  input_dim: 3  # RGB input
+  hidden_dims: [32, 64, 128]  # Feature dimensions at each level
+  d_state: 16  # State dimension for Mamba blocks
+  temporal_window: 4  # Temporal context window size
+  dropout: 0.1
+  d_conv: 4  # Convolution dimension in Mamba
+  expand: 2  # Expansion factor in Mamba
+
+# Dataset configuration
+dataset:
+  batch_size: 4
+  img_size: [384, 384]  # Height, Width
+  sequence_length: 4  # Number of frames in each sequence
+  sequence_stride: 1  # Stride between consecutive sequences
+  num_workers: 4  # Number of data loading workers
+  augmentation:
+    scale_range: [0.5, 2.0]  # Instead of scale_min and scale_max
+    rotation_range: [-10, 10]  # Instead of rotate_degrees
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.1
+    p_flip: 0.5  # Instead of flip_prob
+
+# Optimizer configuration
+optimizer:
+  type: "AdamW"
+  lr: 0.0001
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+
+# Scheduler configuration
+scheduler:
+  type: "cosine"
+  min_lr: 1.0e-6
+
+# Loss function configuration
+losses:
+  ce_weight: 1.0  # Weight for binary cross-entropy loss
+  dice_weight: 1.0  # Weight for dice loss
+  temporal_weight: 0.5  # Weight for temporal consistency loss
+
+# Training configuration
+training:
+  epochs: 100
+  mixed_precision: true
+  gradient_accumulation_steps: 4
+  grad_clip_value: 1.0
+  validate_every: 1  # Validate after every N epochs
+  save_every: 10  # Save checkpoint every N epochs
+
+# Visualization configuration
+visualization:
+  enabled: true
+  dir: "visualizations/binary_seg"
+  interval: 5  # Visualize every 5 validation runs
+
+# Evaluation configuration
+evaluation:
+  enabled: true
+  metrics: ["iou", "f1", "precision", "recall"]
+
+# Optical flow configuration
+flow:
+  enabled: false  # Set to true if using optical flow
+  method: "raft"  # Options: raft, farneback
+  precomputed: false  # Set to true if using precomputed flows
+  precomputed_path: null  # Path to precomputed flows (if applicable)

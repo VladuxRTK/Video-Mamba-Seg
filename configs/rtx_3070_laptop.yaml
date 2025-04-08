@@ -1,0 +1,66 @@
+# RTX 3070 Laptop GPU Configuration (8GB VRAM)
+# Model Configuration
+# Ultra memory-efficient configuration for RTX 3070 Laptop
+model:
+  input_dim: 3
+  hidden_dims: [24, 48, 96]  # Significantly reduced dimensions
+  d_state: 16
+  temporal_window: 2         # Reduced temporal window
+  dropout: 0.1
+  d_conv: 4
+  expand: 2
+  num_instances: 12          # Fewer instances
+
+dataset:
+  img_size: [192, 256]       # Further reduced resolution
+  sequence_length: 2         # Only process 2 frames at a time
+  sequence_stride: 2
+  batch_size: 1
+  num_workers: 2
+  augmentation:
+    scale_range: [0.8, 1.2]
+    rotation_range: [-10, 10]
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.1
+    p_flip: 0.5
+
+training:
+  epochs: 100
+  mixed_precision: true
+  validate_every: 1
+  save_every: 5
+  gradient_accumulation_steps: 8  # Increased gradient accumulation
+# Optimization Configuration
+optimizer:
+  type: 'AdamW'
+  lr: 5.0e-5
+  weight_decay: 0.01
+
+# Learning Rate Schedule
+scheduler:
+  type: 'cosine'
+  min_lr: 1e-6
+
+# Loss weights
+losses:
+  ce_weight: 1.0
+  dice_weight: 1.0
+  temporal_weight: 1.0
+
+# Paths
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/rtx3070'
+  logs: 'logs/rtx3070'
+  visualizations: 'visualizations/rtx3070'
+
+# Visualization and Evaluation
+visualization:
+  enabled: true
+  dir: 'visualizations/rtx3070'
+  interval: 5
+
+evaluation:
+  enabled: true

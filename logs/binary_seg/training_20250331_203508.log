@@ -1,0 +1,5 @@
+2025-03-31 20:35:08,060 - __main__ - INFO - Starting binary video segmentation training with config: configs/binary_seg.yaml
+2025-03-31 20:35:08,064 - __main__ - INFO - Set random seed to 42
+2025-03-31 20:35:08,302 - __main__ - INFO - Using device: cuda
+2025-03-31 20:35:08,303 - __main__ - INFO - Building binary segmentation model...
+2025-03-31 20:35:08,646 - __main__ - INFO - Model created: VideoMambaSegmentation

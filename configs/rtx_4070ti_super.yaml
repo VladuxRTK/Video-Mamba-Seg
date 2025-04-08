@@ -1,0 +1,61 @@
+# Speed-optimized RTX 4070 Ti Super Configuration
+model:
+  input_dim: 3
+  hidden_dims: [24, 48, 96]  # Slightly reduced dimensions for speed
+  d_state: 16
+  temporal_window: 2         # Reduced temporal window
+  dropout: 0.1
+  d_conv: 4
+  expand: 2
+
+dataset:
+  img_size: [240, 320]       # Further reduced resolution for speed
+  sequence_length: 2         # Minimal temporal context for faster processing
+  sequence_stride: 2
+  batch_size: 4              # Increased batch size for faster convergence
+  num_workers: 8             # More workers for faster data loading
+  augmentation:
+    scale_range: [0.8, 1.2]
+    rotation_range: [-10, 10]
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.1
+    p_flip: 0.5
+
+training:
+  epochs: 50                # Fewer epochs
+  mixed_precision: true
+  validate_every: 2         # Validate less frequently
+  save_every: 10
+  grad_clip_value: 0.1     # Add this line to clip gradients and prevent NaNs
+  gradient_accumulation_steps: 1  # No accumulation for direct updates
+
+optimizer:
+  type: 'AdamW'
+  lr: 5.0e-5              # Lower learning rate (reduced by 4x)
+  weight_decay: 0.01
+
+scheduler:
+  type: 'cosine'
+  min_lr: 1e-6
+
+losses:
+  ce_weight: 1.0
+  dice_weight: 1.0
+  temporal_weight: 0.5
+
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/rtx4070ti_super_fast'
+  logs: 'logs/rtx4070ti_super_fast'
+  visualizations: 'visualizations/rtx4070ti_super_fast'
+
+visualization:
+  enabled: true
+  interval: 20              # Visualize much less frequently
+  dir: 'visualizations/rtx4070ti_super_fast'
+
+evaluation:
+  enabled: true
+  metrics: ["iou", "f1"]    # Fewer metrics to compute

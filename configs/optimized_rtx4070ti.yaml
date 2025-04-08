@@ -1,0 +1,64 @@
+# optimized_rtx4070ti.yaml
+model:
+  input_dim: 3
+  hidden_dims: [32, 64, 128]  # Slightly increased capacity
+  d_state: 16
+  temporal_window: 3         # Increased temporal window
+  dropout: 0.2               # More dropout for regularization
+  d_conv: 4
+  expand: 2
+
+dataset:
+  img_size: [240, 320]
+  sequence_length: 3         # Increased temporal context
+  sequence_stride: 2
+  batch_size: 4
+  num_workers: 8
+  augmentation:
+    scale_range: [0.7, 1.3]  # More aggressive scaling
+    rotation_range: [-15, 15]
+    brightness: 0.3
+    contrast: 0.3
+    saturation: 0.3
+    hue: 0.1
+    p_flip: 0.5
+    p_elastic: 0.3          # New elastic deformation
+
+training:
+  epochs: 100               # More epochs
+  mixed_precision: true
+  validate_every: 2
+  save_every: 5
+  gradient_accumulation_steps: 2  # Effective batch size of 8
+  grad_clip_value: 0.5      # Moderate gradient clipping
+
+optimizer:
+  type: 'AdamW'
+  lr: 6.0e-5                # Adjusted for OneCycleLR
+  weight_decay: 0.005       # Increased regularization
+  betas: [0.9, 0.99]        # Modified momentum parameters
+
+scheduler:
+  type: 'onecycle'          # New scheduler type
+  min_lr: 1e-7
+
+losses:
+  ce_weight: 0.5            # Reduced CE weight
+  dice_weight: 1.5          # Increased Dice weight
+  boundary_weight: 1.0      # New boundary loss weight
+  temporal_weight: 0.5
+
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/rtx4070ti_optimized'
+  logs: 'logs/rtx4070ti_optimized'
+  visualizations: 'visualizations/rtx4070ti_optimized'
+
+visualization:
+  enabled: true
+  interval: 10
+  dir: 'visualizations/rtx4070ti_optimized'
+
+evaluation:
+  enabled: true
+  metrics: ["iou", "f1", "boundary"]

@@ -1,0 +1,16 @@
+2025-03-31 20:58:32,229 - __main__ - INFO - Starting binary video segmentation training with config: configs/rtx_4070ti_super.yaml
+2025-03-31 20:58:32,232 - __main__ - INFO - Set random seed to 42
+2025-03-31 20:58:32,475 - __main__ - INFO - Using device: cuda
+2025-03-31 20:58:32,475 - __main__ - INFO - Building binary segmentation model...
+2025-03-31 20:58:32,727 - __main__ - INFO - Model created: VideoMambaSegmentation
+2025-03-31 20:58:32,728 - __main__ - INFO - Created data augmentation with image size: [240, 320]
+2025-03-31 20:58:32,728 - __main__ - INFO - Creating train data loader...
+2025-03-31 20:58:33,113 - __main__ - INFO - Train loader created with 524 batches
+2025-03-31 20:58:33,113 - __main__ - INFO - Creating validation data loader...
+2025-03-31 20:58:33,368 - __main__ - INFO - Validation loader created with 249 batches
+2025-03-31 20:58:33,368 - __main__ - INFO - Creating optimizer: AdamW
+2025-03-31 20:58:33,369 - __main__ - INFO - Creating scheduler: cosine
+2025-03-31 20:58:33,369 - __main__ - INFO - Created BinarySegmentationLoss with weights: CE=1.0, Dice=1.0
+2025-03-31 20:58:33,375 - __main__ - INFO - Trainer initialized
+2025-03-31 20:58:33,375 - __main__ - INFO - Starting training process...
+2025-03-31 20:58:33,375 - utils.training - INFO - Starting training from epoch 0

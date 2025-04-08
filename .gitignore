@@ -1,0 +1,4 @@
+.Mask2Former
+.checkpoints
+./*.png
+.codebase.md

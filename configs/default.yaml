@@ -1,0 +1,69 @@
+                                                  # Model Configuration
+model:
+  input_dim: 3
+  hidden_dims: [64, 128, 256]
+  d_state: 32
+  temporal_window: 8
+  dropout: 0.1
+  d_conv: 4
+  expand: 2
+  num_classes: 21
+  # Add Mask2Former config inside model section
+  mask2former:
+    hidden_dim: 256
+    num_queries: 100
+    nheads: 8
+    dim_feedforward: 2048
+    dec_layers: 9
+    mask_dim: 256
+    enforce_input_project: false
+
+# Dataset Configuration
+# Dataset Configuration
+dataset:
+  img_size: [480, 640]
+  sequence_length: 4  # Reduced from 8
+  sequence_stride: 2
+  batch_size: 1      # Reduced from 2
+  num_workers: 2     # Reduced from 4
+  augmentation:
+    scale_range: [0.8, 1.2]
+    rotation_range: [-10, 10]
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.1
+    p_flip: 0.5
+
+# Training Configuration
+training:
+  epochs: 100
+  mixed_precision: true
+  validate_every: 1
+  save_every: 5
+  gradient_accumulation_steps: 4  # Added this parameter
+
+# Optimization Configuration
+optimizer:
+  type: 'AdamW'
+  lr: 1.0e-4
+  weight_decay: 0.01
+
+# Learning Rate Schedule
+scheduler:
+  type: 'cosine'
+  min_lr: 1e-6
+
+# Loss weights
+losses:
+  ce_weight: 1.0
+  dice_weight: 1.0
+  temporal_weight: 1.0
+
+# Paths
+
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints'
+  logs: 'logs'
+  visualizations: 'visualizations'

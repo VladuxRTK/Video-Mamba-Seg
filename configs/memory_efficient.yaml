@@ -1,0 +1,68 @@
+# Memory-efficient configuration for training on limited VRAM
+# Model Configuration - reduced dimensions
+model:
+  input_dim: 3
+  hidden_dims: [32, 64, 128]  # Reduced channel dimensions
+  d_state: 16
+  temporal_window: 4
+  dropout: 0.1
+  d_conv: 4
+  expand: 2
+  num_classes: 21
+  mask2former:
+    hidden_dim: 256          # Must be 256 to match Mask2Former expectations
+    mask_dim: 256           # Must be 256 to match Mask2Former expectations
+    num_queries: 50         # Reduced from 100 for memory efficiency
+    nheads: 4              # Reduced from 8
+    dim_feedforward: 512   # Reduced from 2048
+    dec_layers: 6
+    enforce_input_project: false
+
+# Dataset Configuration
+dataset:
+  img_size: [240, 320]    # Reduced resolution
+  sequence_length: 2      # Shorter sequences
+  sequence_stride: 2
+  batch_size: 1
+  num_workers: 2
+  augmentation:
+    scale_range: [0.8, 1.2]
+    rotation_range: [-10, 10]
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.1
+    p_flip: 0.5
+
+# Training Configuration
+training:
+  epochs: 100
+  mixed_precision: true
+  validate_every: 1
+  save_every: 5
+  gradient_accumulation_steps: 4
+
+
+# Optimization Configuration
+optimizer:
+  type: 'AdamW'
+  lr: 5.0e-5                      # Reduced from 1.0e-4
+  weight_decay: 0.01
+
+# Learning Rate Schedule
+scheduler:
+  type: 'cosine'
+  min_lr: 1e-6
+
+# Loss weights
+losses:
+  ce_weight: 1.0
+  dice_weight: 1.0
+  temporal_weight: 1.0
+
+# Paths
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints'
+  logs: 'logs'
+  visualizations: 'visualizations'
