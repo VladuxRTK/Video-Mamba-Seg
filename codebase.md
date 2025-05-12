@@ -2,6 +2,9 @@
 
 ```
 .Mask2Former
+.checkpoints
+./*.png
+.codebase.md
 ```
 
 # configs\binary_seg.yaml
@@ -6268,42 +6271,6 @@ yacs=0.1.8=pypi_0
 zlib=1.2.13=h5eee18b_1
 
 ```
-
-# test_visualization\breakdance_untrained_frame_000.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained_frame_001.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained_frame_002.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained_frame_003.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained_frames\frame_000.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained_frames\frame_001.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained_frames\frame_002.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained_frames\frame_003.png
-
-This is a binary file of the type: Image
-
-# test_visualization\breakdance_untrained.mp4
-
-This is a binary file of the type: Binary
 
 # tests\davis_test_results\breakdance_batch_0.png
 

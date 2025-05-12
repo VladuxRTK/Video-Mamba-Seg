@@ -1,0 +1,233 @@
+2025-04-08 20:08:58,476 - __main__ - INFO - Starting binary video segmentation training with config: configs/optimized_rtx4070ti.yaml
+2025-04-08 20:08:58,479 - __main__ - INFO - Set random seed to 42
+2025-04-08 20:08:58,728 - __main__ - INFO - Using device: cuda
+2025-04-08 20:08:58,728 - __main__ - INFO - Building binary segmentation model...
+2025-04-08 20:08:59,041 - __main__ - INFO - Model created: VideoMambaSegmentation
+2025-04-08 20:08:59,042 - __main__ - INFO - Created data augmentation with image size: [240, 320]
+2025-04-08 20:08:59,042 - __main__ - INFO - Creating train data loader...
+2025-04-08 20:08:59,416 - __main__ - INFO - Train loader created with 514 batches
+2025-04-08 20:08:59,416 - __main__ - INFO - Creating validation data loader...
+2025-04-08 20:08:59,610 - __main__ - INFO - Validation loader created with 244 batches
+2025-04-08 20:08:59,610 - __main__ - INFO - Creating optimizer: AdamW
+2025-04-08 20:08:59,610 - __main__ - INFO - Creating scheduler: onecycle
+2025-04-08 20:08:59,616 - __main__ - INFO - Trainer initialized
+2025-04-08 20:08:59,616 - __main__ - INFO - Starting training process...
+2025-04-08 20:08:59,616 - utils.training - INFO - Starting training from epoch 0
+2025-04-08 21:25:46,237 - utils.training - INFO - Epoch 0 completed: Loss: 2.6235, CE: 0.4329, Dice: 1.2108, Boundary: 0.9799, LR: 0.000003
+2025-04-08 22:41:05,743 - utils.training - INFO - Epoch 1 completed: Loss: 2.6242, CE: 0.4330, Dice: 1.2113, Boundary: 0.9800, LR: 0.000004
+2025-04-08 22:41:10,014 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.9140545..2.2583544].
+2025-04-08 22:41:10,020 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.9140545..108.90334].
+2025-04-08 22:41:10,025 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.9140545..108.88473].
+2025-04-08 22:41:10,205 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.9137735..2.2614527].
+2025-04-08 22:41:10,208 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.9137735..108.90458].
+2025-04-08 22:41:10,211 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.9137735..108.88881].
+2025-04-08 22:41:18,696 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:41:18,696 - utils.training - INFO - Global: J&F: 0.1034, J_mean: 0.1480, T_mean: 0.9201
+2025-04-08 22:41:26,427 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:41:26,428 - utils.training - INFO - Global: J&F: 0.0731, J_mean: 0.1213, T_mean: 0.9279
+2025-04-08 22:41:30,472 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+2025-04-08 22:41:30,475 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-08 22:41:30,478 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-08 22:41:30,656 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+2025-04-08 22:41:30,659 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-08 22:41:30,661 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-08 22:41:34,119 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:41:34,120 - utils.training - INFO - Global: J&F: 0.0636, J_mean: 0.1072, T_mean: 0.9157
+2025-04-08 22:41:41,609 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:41:41,609 - utils.training - INFO - Global: J&F: 0.0675, J_mean: 0.1135, T_mean: 0.9043
+2025-04-08 22:41:49,061 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:41:49,062 - utils.training - INFO - Global: J&F: 0.0775, J_mean: 0.1348, T_mean: 0.9246
+2025-04-08 22:41:49,460 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0497804..2.5996177].
+2025-04-08 22:41:49,463 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0497804..109.03985].
+2025-04-08 22:41:49,465 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0497804..109.03985].
+2025-04-08 22:41:49,620 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.049248..2.6001596].
+2025-04-08 22:41:49,622 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.049248..109.04006].
+2025-04-08 22:41:49,625 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.049248..109.03992].
+2025-04-08 22:41:56,734 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:41:56,734 - utils.training - INFO - Global: J&F: 0.0868, J_mean: 0.1547, T_mean: 0.9122
+2025-04-08 22:42:04,299 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:42:04,299 - utils.training - INFO - Global: J&F: 0.1006, J_mean: 0.1655, T_mean: 0.9429
+2025-04-08 22:42:08,427 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.6399572].
+2025-04-08 22:42:08,430 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.055984].
+2025-04-08 22:42:08,433 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..140.12271].
+2025-04-08 22:42:08,589 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.6399572].
+2025-04-08 22:42:08,592 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.055984].
+2025-04-08 22:42:08,595 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..140.11563].
+2025-04-08 22:42:12,151 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:42:12,152 - utils.training - INFO - Global: J&F: 0.0998, J_mean: 0.1734, T_mean: 0.9225
+2025-04-08 22:42:19,719 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:42:19,719 - utils.training - INFO - Global: J&F: 0.1021, J_mean: 0.1805, T_mean: 0.9197
+2025-04-08 22:42:27,306 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:42:27,306 - utils.training - INFO - Global: J&F: 0.1295, J_mean: 0.1936, T_mean: 0.9252
+2025-04-08 22:42:27,708 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+2025-04-08 22:42:27,711 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-08 22:42:27,714 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..108.85546].
+2025-04-08 22:42:27,860 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+2025-04-08 22:42:27,862 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-08 22:42:27,865 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..108.96727].
+2025-04-08 22:42:35,322 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:42:35,323 - utils.training - INFO - Global: J&F: 0.0748, J_mean: 0.1251, T_mean: 0.9170
+2025-04-08 22:42:42,898 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:42:42,899 - utils.training - INFO - Global: J&F: 0.0835, J_mean: 0.1337, T_mean: 0.9103
+2025-04-08 22:42:44,259 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-08 22:42:44,259 - utils.training - INFO - Global: J&F: 0.1084, J_mean: 0.1762, T_mean: 0.9252
+2025-04-08 22:42:44,335 - utils.training - INFO - Epoch 1 validation: val_loss: 2.6535 J&F: 0.1084 J_mean: 0.1762 F_mean: 0.0405 T_mean: 0.9252 instance_stability: 1.0000
+2025-04-08 22:42:44,409 - utils.training - INFO - Saved checkpoint and metrics to checkpoints/rtx4070ti_optimized
+2025-04-08 23:58:43,373 - utils.training - INFO - Epoch 2 completed: Loss: 2.6239, CE: 0.4327, Dice: 1.2111, Boundary: 0.9801, LR: 0.000006
+2025-04-09 01:14:43,895 - utils.training - INFO - Epoch 3 completed: Loss: 2.6237, CE: 0.4328, Dice: 1.2109, Boundary: 0.9800, LR: 0.000008
+2025-04-09 01:14:47,118 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0428782..2.5722122].
+2025-04-09 01:14:47,123 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0428782..109.028885].
+2025-04-09 01:14:47,130 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0428782..140.22054].
+2025-04-09 01:14:47,305 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0427558..2.5627248].
+2025-04-09 01:14:47,308 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0427558..109.02509].
+2025-04-09 01:14:47,312 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0427558..140.21858].
+2025-04-09 01:14:55,204 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:14:55,204 - utils.training - INFO - Global: J&F: 0.0879, J_mean: 0.1318, T_mean: 0.9229
+2025-04-09 01:15:03,071 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:03,072 - utils.training - INFO - Global: J&F: 0.0817, J_mean: 0.1333, T_mean: 0.9280
+2025-04-09 01:15:07,205 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6199609..2.0623991].
+2025-04-09 01:15:07,208 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6199609..108.82496].
+2025-04-09 01:15:07,211 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6199609..108.82496].
+2025-04-09 01:15:07,366 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6196747..2.0626905].
+2025-04-09 01:15:07,368 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6196747..108.82507].
+2025-04-09 01:15:07,372 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6196747..108.82507].
+2025-04-09 01:15:10,926 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:10,927 - utils.training - INFO - Global: J&F: 0.0611, J_mean: 0.1009, T_mean: 0.9171
+2025-04-09 01:15:18,378 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:18,379 - utils.training - INFO - Global: J&F: 0.0631, J_mean: 0.1047, T_mean: 0.9084
+2025-04-09 01:15:26,038 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:26,038 - utils.training - INFO - Global: J&F: 0.0699, J_mean: 0.1196, T_mean: 0.9271
+2025-04-09 01:15:26,440 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6862303..2.0077188].
+2025-04-09 01:15:26,443 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6862303..108.803085].
+2025-04-09 01:15:26,445 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6862303..108.77613].
+2025-04-09 01:15:26,613 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6827966..2.0112135].
+2025-04-09 01:15:26,615 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6827966..108.802376].
+2025-04-09 01:15:26,618 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.6827966..108.767456].
+2025-04-09 01:15:33,970 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:33,971 - utils.training - INFO - Global: J&F: 0.0761, J_mean: 0.1370, T_mean: 0.9074
+2025-04-09 01:15:41,655 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:41,655 - utils.training - INFO - Global: J&F: 0.0760, J_mean: 0.1169, T_mean: 0.9435
+2025-04-09 01:15:45,777 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+2025-04-09 01:15:45,779 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 01:15:45,782 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 01:15:45,925 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+2025-04-09 01:15:45,928 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 01:15:45,931 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 01:15:49,567 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:49,567 - utils.training - INFO - Global: J&F: 0.0811, J_mean: 0.1334, T_mean: 0.9283
+2025-04-09 01:15:57,241 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:15:57,241 - utils.training - INFO - Global: J&F: 0.0936, J_mean: 0.1639, T_mean: 0.9203
+2025-04-09 01:16:04,826 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:16:04,826 - utils.training - INFO - Global: J&F: 0.1045, J_mean: 0.1472, T_mean: 0.9250
+2025-04-09 01:16:05,228 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0854728..2.64].
+2025-04-09 01:16:05,231 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0854728..109.056].
+2025-04-09 01:16:05,234 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.0854728..109.056].
+2025-04-09 01:16:05,371 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.085433..2.64].
+2025-04-09 01:16:05,374 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.085433..109.056].
+2025-04-09 01:16:05,376 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.085433..109.056].
+2025-04-09 01:16:12,696 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:16:12,697 - utils.training - INFO - Global: J&F: 0.0896, J_mean: 0.1468, T_mean: 0.9182
+2025-04-09 01:16:20,213 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:16:20,214 - utils.training - INFO - Global: J&F: 0.0846, J_mean: 0.1365, T_mean: 0.9106
+2025-04-09 01:16:21,572 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 01:16:21,573 - utils.training - INFO - Global: J&F: 0.0656, J_mean: 0.1023, T_mean: 0.9324
+2025-04-09 01:16:21,647 - utils.training - INFO - Epoch 3 validation: val_loss: 2.6572 J&F: 0.0656 J_mean: 0.1023 F_mean: 0.0288 T_mean: 0.9324 instance_stability: 1.0000
+2025-04-09 02:33:02,358 - utils.training - INFO - Epoch 4 completed: Loss: 2.6235, CE: 0.4328, Dice: 1.2107, Boundary: 0.9799, LR: 0.000011
+2025-04-09 03:49:41,567 - utils.training - INFO - Epoch 5 completed: Loss: 2.6245, CE: 0.4331, Dice: 1.2113, Boundary: 0.9800, LR: 0.000014
+2025-04-09 03:49:44,850 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.895036..2.2384877].
+2025-04-09 03:49:44,856 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.895036..108.89539].
+2025-04-09 03:49:44,864 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.895036..140.09023].
+2025-04-09 03:49:45,049 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8946712..2.2426405].
+2025-04-09 03:49:45,053 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8946712..108.892395].
+2025-04-09 03:49:45,057 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8946712..140.09239].
+2025-04-09 03:49:52,953 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:49:52,953 - utils.training - INFO - Global: J&F: 0.0870, J_mean: 0.1197, T_mean: 0.9242
+2025-04-09 03:50:01,155 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:01,155 - utils.training - INFO - Global: J&F: 0.0772, J_mean: 0.1275, T_mean: 0.9230
+2025-04-09 03:50:05,173 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.639936].
+2025-04-09 03:50:05,176 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.05598].
+2025-04-09 03:50:05,179 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.05598].
+2025-04-09 03:50:05,333 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.639936].
+2025-04-09 03:50:05,335 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.05598].
+2025-04-09 03:50:05,338 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.05598].
+2025-04-09 03:50:08,840 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:08,840 - utils.training - INFO - Global: J&F: 0.0630, J_mean: 0.1048, T_mean: 0.9164
+2025-04-09 03:50:16,314 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:16,314 - utils.training - INFO - Global: J&F: 0.0678, J_mean: 0.1134, T_mean: 0.9093
+2025-04-09 03:50:23,862 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:23,863 - utils.training - INFO - Global: J&F: 0.0794, J_mean: 0.1413, T_mean: 0.9277
+2025-04-09 03:50:24,265 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8753498..2.4676423].
+2025-04-09 03:50:24,268 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8753498..108.98706].
+2025-04-09 03:50:24,271 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8753498..108.94824].
+2025-04-09 03:50:24,430 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8734449..2.464887].
+2025-04-09 03:50:24,432 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8734449..108.985954].
+2025-04-09 03:50:24,435 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.8734449..108.93076].
+2025-04-09 03:50:31,736 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:31,736 - utils.training - INFO - Global: J&F: 0.0873, J_mean: 0.1544, T_mean: 0.9114
+2025-04-09 03:50:39,375 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:39,376 - utils.training - INFO - Global: J&F: 0.0826, J_mean: 0.1229, T_mean: 0.9435
+2025-04-09 03:50:43,513 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.6399968].
+2025-04-09 03:50:43,516 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 03:50:43,519 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 03:50:43,669 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.6399968].
+2025-04-09 03:50:43,671 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 03:50:43,674 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.056].
+2025-04-09 03:50:47,324 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:47,325 - utils.training - INFO - Global: J&F: 0.0773, J_mean: 0.1296, T_mean: 0.9322
+2025-04-09 03:50:55,065 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:50:55,065 - utils.training - INFO - Global: J&F: 0.1137, J_mean: 0.2001, T_mean: 0.9195
+2025-04-09 03:51:02,740 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:51:02,741 - utils.training - INFO - Global: J&F: 0.1317, J_mean: 0.1986, T_mean: 0.9253
+2025-04-09 03:51:03,146 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.639962].
+2025-04-09 03:51:03,149 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.055984].
+2025-04-09 03:51:03,152 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..108.81822].
+2025-04-09 03:51:03,293 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.639962].
+2025-04-09 03:51:03,296 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..109.055984].
+2025-04-09 03:51:03,298 - matplotlib.image - WARNING - Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..108.997444].
+2025-04-09 03:51:10,735 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:51:10,735 - utils.training - INFO - Global: J&F: 0.0911, J_mean: 0.1515, T_mean: 0.9146
+2025-04-09 03:51:18,417 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:51:18,417 - utils.training - INFO - Global: J&F: 0.0852, J_mean: 0.1344, T_mean: 0.9090
+2025-04-09 03:51:19,753 - utils.training - INFO - 
+Partial Evaluation Results:
+2025-04-09 03:51:19,753 - utils.training - INFO - Global: J&F: 0.0000, J_mean: 0.0000, T_mean: 0.9187
+2025-04-09 03:51:19,829 - utils.training - INFO - Epoch 5 validation: val_loss: 2.6525 J&F: 0.0000 J_mean: 0.0000 F_mean: 0.0000 T_mean: 0.9187 instance_stability: 1.0000
+2025-04-09 03:51:19,891 - utils.training - INFO - Saved checkpoint and metrics to checkpoints/rtx4070ti_optimized
