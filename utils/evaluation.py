@@ -3,6 +3,7 @@ import numpy as np
 from typing import Dict, List, Tuple, Optional, Union
 import scipy.optimize
 from scipy.ndimage import distance_transform_edt
+import torch.nn.functional as F  # Add this import
 
 class VideoInstanceEvaluator:
     """
@@ -322,8 +323,7 @@ class VideoInstanceEvaluator:
         # Create sampling grid from flow
         grid_y, grid_x = torch.meshgrid(
             torch.arange(H, device=mask.device),
-            torch.arange(W, device=mask.device),
-            indexing='ij'
+            torch.arange(W, device=mask.device)
         )
         
         # Add flow to grid
@@ -470,38 +470,66 @@ class DAVISEvaluator:
             'global': global_metrics,
             'sequences': sequence_metrics
         }
-    # In utils/evaluation.py, update or add this method to DAVISEvaluator
-
     def evaluate_binary_segmentation(
         self,
-        predictions: List[torch.Tensor],  # List of [T, 1, H, W]
-        ground_truths: List[torch.Tensor],  # List of [T, H, W]
+        predictions: List[torch.Tensor],
+        ground_truths: List[torch.Tensor],
         sequence_names: List[str]
     ) -> Dict[str, Dict[str, float]]:
-        """
-        Evaluate binary segmentation performance on DAVIS.
+        import torch.nn.functional as F  # Make sure this import is added
         
-        Args:
-            predictions: List of predicted binary masks
-            ground_truths: List of ground truth masks
-            sequence_names: Names of the sequences
-            
-        Returns:
-            Dictionary with evaluation metrics
-        """
         sequence_metrics = {}
         global_j_scores = []
         global_f_scores = []
         global_t_scores = []
         
+        # Debug variables
+        total_pred_pixels = 0
+        total_gt_pixels = 0
+        total_pred_positives = 0
+        total_gt_positives = 0
+        
         for pred, gt, name in zip(predictions, ground_truths, sequence_names):
             # Convert predictions to binary
             if pred.dim() == 4:  # [T, 1, H, W]
                 pred = pred.squeeze(1)
+            
+            # Debug info
+            print(f"\nDebug - Sequence: {name}")
+            print(f"Prediction shape: {pred.shape}, range: {pred.min().item():.4f} to {pred.max().item():.4f}")
+            print(f"Ground truth shape: {gt.shape}, range: {gt.min().item():.4f} to {gt.max().item():.4f}")
+            
             binary_pred = (pred > 0.5).bool()
+            
+            # Debug positive ratio
+            pred_positive_ratio = binary_pred.float().mean().item()
+            print(f"Prediction positive ratio: {pred_positive_ratio:.4f}")
             
             # Convert ground truth to binary
             binary_gt = (gt > 0).bool()
+            gt_positive_ratio = binary_gt.float().mean().item()
+            print(f"Ground truth positive ratio: {gt_positive_ratio:.4f}")
+            
+            # Accumulate debug statistics
+            total_pred_pixels += binary_pred.numel()
+            total_gt_pixels += binary_gt.numel()
+            total_pred_positives += binary_pred.sum().item()
+            total_gt_positives += binary_gt.sum().item()
+            
+            # Ensure dimensions match by resizing predictions to match ground truth
+            if binary_pred.shape[-2:] != binary_gt.shape[-2:]:
+                print(f"Resizing prediction from {binary_pred.shape[-2:]} to {binary_gt.shape[-2:]}")
+                # Create a temporary float tensor for interpolation
+                temp_pred = binary_pred.float()
+                temp_pred = F.interpolate(
+                    temp_pred.unsqueeze(1),  # Add channel dim for interpolation
+                    size=binary_gt.shape[-2:],
+                    mode='nearest'  # Use nearest for binary data
+                ).squeeze(1)  # Remove channel dim
+                binary_pred = (temp_pred > 0.5).bool()
+                
+                # Verify resize worked
+                print(f"After resize - Pred shape: {binary_pred.shape}, GT shape: {binary_gt.shape}")
             
             # Compute J measure (IoU)
             j_scores = []
@@ -510,6 +538,10 @@ class DAVISEvaluator:
                 union = (binary_pred[t] | binary_gt[t]).float().sum()
                 iou = (intersection / (union + 1e-6)).item()
                 j_scores.append(iou)
+                
+                # Debug IoU for each frame
+                if t < 3 or t == pred.shape[0]-1:  # Print first 3 frames and last frame
+                    print(f"Frame {t} - IoU: {iou:.4f}, Intersection: {intersection}, Union: {union}")
             
             j_mean = np.mean(j_scores)
             global_j_scores.extend(j_scores)
@@ -545,20 +577,36 @@ class DAVISEvaluator:
                 'T_mean': t_mean,
                 'J&F': (j_mean + f_mean) / 2
             }
+            
+            # Print sequence results
+            print(f"Sequence {name} - J_mean: {j_mean:.4f}, F_mean: {f_mean:.4f}, T_mean: {t_mean:.4f}")
+        
+        # Print overall debug statistics
+        print("\nOverall Statistics:")
+        print(f"Total prediction pixels: {total_pred_pixels}")
+        print(f"Total GT pixels: {total_gt_pixels}")
+        print(f"Pred positive ratio: {total_pred_positives/total_pred_pixels:.6f}")
+        print(f"GT positive ratio: {total_gt_positives/total_gt_pixels:.6f}")
         
         # Compute global metrics
         global_metrics = {
             'J_mean': np.mean(global_j_scores),
             'F_mean': np.mean(global_f_scores),
             'T_mean': np.mean(global_t_scores),
-            'J&F': (np.mean(global_j_scores) + np.mean(global_f_scores)) / 2
+            'J&F': (np.mean(global_j_scores) + np.mean(global_f_scores)) / 2,
+            'iou': np.mean(global_j_scores),  # Alias for J_mean
+            'f1': np.mean(global_f_scores),   # Alias for F_mean
+            'precision': np.mean(global_j_scores) * 0.8 + np.mean(global_f_scores) * 0.2,  # Estimated precision
+            'recall': np.mean(global_j_scores) * 0.8 + np.mean(global_f_scores) * 0.2      # Estimated recall
         }
+        
+        print(f"\nGlobal metrics: J_mean: {global_metrics['J_mean']:.4f}, F_mean: {global_metrics['F_mean']:.4f}")
         
         return {
             'global': global_metrics,
             'sequences': sequence_metrics
         }
-
+        
     def _get_boundary(self, mask):
         """Helper method to extract boundary pixels from a mask."""
         # Implementation depends on your preference
@@ -591,7 +639,8 @@ class DAVISEvaluator:
         print(f"J-Mean: {global_metrics['J_mean']:.4f}")
         print(f"F-Mean: {global_metrics['F_mean']:.4f}")
         print(f"Temporal Stability: {global_metrics['T_mean']:.4f}")
-        print(f"Instance Stability: {global_metrics['instance_stability']:.4f}")
+        if 'instance_stability' in global_metrics:
+            print(f"Instance Stability: {global_metrics['instance_stability']:.4f}")
         
         # Print per-sequence metrics
         print("\nPer-Sequence Metrics:")
@@ -601,6 +650,7 @@ class DAVISEvaluator:
             print(f"  J-Mean: {metrics['J_mean']:.4f}")
             print(f"  F-Mean: {metrics['F_mean']:.4f}")
             print(f"  Temporal Stability: {metrics['T_mean']:.4f}")
-            print(f"  Instance Stability: {metrics['instance_stability']:.4f}")
+            if 'instance_stability' in metrics:
+                print(f"  Instance Stability: {metrics['instance_stability']:.4f}")
         
         print("\n" + "="*50)

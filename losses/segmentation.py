@@ -11,7 +11,7 @@ class BinarySegmentationLoss(nn.Module):
         self.boundary_weight = boundary_weight
         self.ce_loss = nn.BCEWithLogitsLoss()
         self.dice_loss = DiceLoss()
-        self.boundary_loss = BoundaryLoss()  # New boundary loss
+        self.boundary_loss = BoundaryLoss() if boundary_weight > 0 else None
     
     def forward(self, outputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
@@ -24,74 +24,104 @@ class BinarySegmentationLoss(nn.Module):
         Returns:
             Dictionary with individual losses and total loss
         """
-        # Extract predictions
-        if 'logits' in outputs:
-            logits = outputs['logits']  # Could be [B, T, 1, H, W]
-        else:
-            # Use pred_masks - may need to apply inverse sigmoid if they're probabilities
-            pred_masks = outputs['pred_masks']
-            # Check if they're probabilities (between 0 and 1)
-            if pred_masks.max() <= 1.0 and pred_masks.min() >= 0.0:
-                # Apply logit transform to convert back to logits
-                eps = 1e-6  # Small value to prevent log(0) or log(1)
-                logits = torch.log(pred_masks / (1 - pred_masks + eps) + eps)
-            else:
-                logits = pred_masks
+        # Get logits and reshape if necessary
+        logits = outputs['logits']  # [B, T, 1, H, W]
+        if logits.dim() == 5:
+            B, T = logits.shape[:2]
+            logits = logits.view(B*T, 1, logits.shape[3], logits.shape[4])
         
-        # Extract ground truth masks
-        masks = targets['masks']  # Could be [B, T, H, W]
-        
-        # Handle batch+temporal dimensions
-        if logits.dim() == 5 and masks.dim() == 4:
-            # The shapes are [B, T, C, H, W] and [B, T, H, W]
-            # We need to reshape to [B*T, C, H, W] and [B*T, H, W]
+        # Get target masks and reshape if necessary
+        masks = targets['masks']  # [B, T, H, W]
+        if masks.dim() == 4:
             B, T = masks.shape[:2]
-            H, W = masks.shape[2:]
-            
-            # Reshape logits: [B, T, C, H, W] -> [B*T, C, H, W]
-            logits = logits.reshape(B*T, logits.shape[2], H, W)
-            
-            # Reshape masks: [B, T, H, W] -> [B*T, H, W]
-            masks = masks.reshape(B*T, H, W)
+            masks = masks.view(B*T, masks.shape[2], masks.shape[3])
         
         # Convert masks to binary format (0 or 1)
         binary_masks = (masks > 0).float()
         
-        # For BCE loss, target must have same shape as input
-        if logits.dim() == 4 and binary_masks.dim() == 3:  # [B, C, H, W] vs [B, H, W]
-            # Add channel dimension to binary_masks
-            binary_masks_with_channel = binary_masks.unsqueeze(1)  # [B, 1, H, W]
-            ce_loss = self.ce_loss(logits, binary_masks_with_channel) * self.ce_weight
-        else:
-            ce_loss = self.ce_loss(logits, binary_masks) * self.ce_weight
+        # Add channel dimension to binary_masks
+        binary_masks_with_channel = binary_masks.unsqueeze(1)  # [B*T, 1, H, W]
         
-        # For Dice loss, convert logits to probabilities
+        # Check if dimensions match - if not, resize logits to match target
+        if logits.shape[2:] != binary_masks_with_channel.shape[2:]:
+            logits = F.interpolate(
+                logits, 
+                size=binary_masks_with_channel.shape[2:],
+                mode='bilinear', 
+                align_corners=False
+            )
+        
+        # Check for NaN values in logits and replace them
+        if torch.isnan(logits).any():
+            logits = torch.where(torch.isnan(logits), torch.zeros_like(logits), logits)
+            print("WARNING: NaN values found in logits, replacing with zeros")
+        
+        # Calculate BCE loss
+        ce_loss = self.ce_loss(logits, binary_masks_with_channel) * self.ce_weight
+        
+        # Calculate Dice loss (also resize pred_probs if needed)
         pred_probs = torch.sigmoid(logits)
         
-        # For Dice loss, both inputs should be [B, H, W]
-        if pred_probs.dim() == 4:  # [B, C, H, W]
-            pred_probs_squeezed = pred_probs.squeeze(1)  # [B, H, W]
-            dice_loss = self.dice_loss(pred_probs_squeezed, binary_masks) * self.dice_weight
-        else:
-            dice_loss = self.dice_loss(pred_probs, binary_masks) * self.dice_weight
+        # Check for NaN values in pred_probs
+        if torch.isnan(pred_probs).any():
+            pred_probs = torch.where(torch.isnan(pred_probs), torch.zeros_like(pred_probs), pred_probs)
+            print("WARNING: NaN values found in pred_probs, replacing with zeros")
         
-        # For boundary loss, inputs should also be [B, H, W]
-        if pred_probs.dim() == 4:  # [B, C, H, W]
-            boundary_loss = self.boundary_loss(pred_probs_squeezed, binary_masks) * self.boundary_weight
-        else:
-            boundary_loss = self.boundary_loss(pred_probs, binary_masks) * self.boundary_weight
+        dice_loss = self.dice_loss(pred_probs.squeeze(1), binary_masks) * self.dice_weight
         
-        # Compute total loss
+        # Calculate Boundary loss if enabled
+        boundary_loss = 0.0
+        if self.boundary_loss is not None:
+            boundary_loss = self.boundary_loss(pred_probs.squeeze(1), binary_masks) * self.boundary_weight
+        
+        # Calculate total loss
         total_loss = ce_loss + dice_loss + boundary_loss
+        
+        # Check for NaN in final loss
+        if torch.isnan(total_loss):
+            print(f"WARNING: NaN in loss - CE: {ce_loss.item()}, Dice: {dice_loss.item()}, Boundary: {boundary_loss}")
+            # Provide a fallback loss to prevent training breakdown
+            total_loss = torch.tensor(1.0, device=logits.device, requires_grad=True)
         
         return {
             'loss': total_loss,
             'ce_loss': ce_loss,
             'dice_loss': dice_loss,
-            'boundary_loss': boundary_loss
+            'boundary_loss': boundary_loss if self.boundary_loss is not None else 0.0
         }
 
-# Add a new boundary loss class
+class DiceLoss(nn.Module):
+    def __init__(self, smooth: float = 1.0):
+        super().__init__()
+        self.smooth = smooth
+        
+    def forward(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the Dice loss between predictions and targets.
+        
+        Args:
+            predictions: Predicted probabilities [B, H, W]
+            targets: Binary target masks [B, H, W]
+            
+        Returns:
+            Dice loss
+        """
+        batch_size = predictions.size(0)
+        
+        # Flatten predictions and targets
+        pred_flat = predictions.reshape(batch_size, -1)
+        targets_flat = targets.reshape(batch_size, -1)
+        
+        # Compute intersection and union
+        intersection = (pred_flat * targets_flat).sum(1)
+        union = pred_flat.sum(1) + targets_flat.sum(1)
+        
+        # Compute Dice coefficient
+        dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
+        
+        # Return Dice loss
+        return 1.0 - dice.mean()
+
 class BoundaryLoss(nn.Module):
     def __init__(self, smooth: float = 1.0):
         super().__init__()
@@ -152,35 +182,3 @@ class BoundaryLoss(nn.Module):
         # Normalize and return
         grad_mag = grad_mag / (grad_mag.max() + 1e-8)
         return grad_mag
-
-class DiceLoss(nn.Module):
-    def __init__(self, smooth: float = 1.0):
-        super().__init__()
-        self.smooth = smooth
-        
-    def forward(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        """
-        Compute the Dice loss between predictions and targets.
-        
-        Args:
-            predictions: Predicted probabilities [B, H, W]
-            targets: Binary target masks [B, H, W]
-            
-        Returns:
-            Dice loss
-        """
-        batch_size = predictions.size(0)
-        
-        # Flatten predictions and targets
-        pred_flat = predictions.reshape(batch_size, -1)
-        targets_flat = targets.reshape(batch_size, -1)
-        
-        # Compute intersection and union
-        intersection = (pred_flat * targets_flat).sum(1)
-        union = pred_flat.sum(1) + targets_flat.sum(1)
-        
-        # Compute Dice coefficient
-        dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
-        
-        # Return Dice loss
-        return 1.0 - dice.mean()

@@ -1,0 +1,5 @@
+2025-05-14 17:36:53,374 - __main__ - INFO - Starting Mamba-based binary video segmentation training
+2025-05-14 17:36:53,375 - __main__ - INFO - Using configuration from: configs/mamba_binary_efficient.yaml
+2025-05-14 17:36:53,382 - __main__ - INFO - Set random seed to 42
+2025-05-14 17:36:53,628 - __main__ - INFO - Using device: cuda
+2025-05-14 17:36:53,628 - __main__ - INFO - Building Mamba-based binary segmentation model...

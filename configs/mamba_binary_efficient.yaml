@@ -1,0 +1,72 @@
+# Mamba-based binary video segmentation configuration optimized for efficiency
+model:
+  input_dim: 3
+  hidden_dims: [32, 64, 128]  # Appropriate feature dimensions for binary segmentation
+  d_state: 16                # Mamba state dimension
+  temporal_window: 3         # Temporal context window
+  dropout: 0.2               # Regularization to prevent overfitting
+  d_conv: 4                  # Mamba convolution dimension
+  expand: 2                  # Mamba expansion factor
+
+# Dataset Configuration
+dataset:
+  img_size: [240, 320]       # Balanced resolution for efficient training
+  sequence_length: 3         # Balanced sequence length
+  sequence_stride: 2         # Skip every other frame for efficiency
+  batch_size: 2              # Adjust based on GPU memory
+  num_workers: 4             # Parallel data loading
+  augmentation:
+    scale_range: [0.7, 1.3]  # More aggressive augmentation to improve generalization
+    rotation_range: [-15, 15]
+    brightness: 0.3
+    contrast: 0.3
+    saturation: 0.3
+    hue: 0.1
+    p_flip: 0.5
+
+# Training Configuration
+training:
+  epochs: 100
+  mixed_precision: true     # Use mixed precision for memory efficiency
+  validate_every: 1
+  save_every: 5
+  gradient_accumulation_steps: 2  # Effective batch size of 4
+  grad_clip_value: 0.5      # Prevent exploding gradients
+  patience: 15              # Early stopping patience
+
+# Optimization Configuration
+optimizer:
+  type: 'AdamW'
+  lr: 5.0e-5                # Starting learning rate
+  weight_decay: 0.01        # Weight decay for regularization
+  betas: [0.9, 0.95]        # Momentum parameters
+
+# Learning Rate Schedule
+scheduler:
+  type: 'onecycle'          # One-cycle learning rate schedule
+  min_lr: 1e-6              # Minimum learning rate
+
+# Loss weights
+losses:
+  ce_weight: 0.5            # Binary cross-entropy weight
+  dice_weight: 1.5          # Dice loss weight (emphasize shape)
+  boundary_weight: 1.0      # Boundary loss weight (emphasize edges)
+  temporal_weight: 0.5      # Temporal consistency weight
+
+# Paths
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/mamba_binary'
+  logs: 'logs/mamba_binary'
+  visualizations: 'visualizations/mamba_binary'
+
+# Visualization Configuration
+visualization:
+  enabled: true
+  interval: 5
+  dir: 'visualizations/mamba_binary'
+
+# Evaluation Configuration
+evaluation:
+  enabled: true
+  metrics: ["iou", "f1", "precision", "recall"]

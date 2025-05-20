@@ -1,0 +1,12 @@
+2025-05-12 12:44:23,303 - __main__ - INFO - Starting Mamba-based binary video segmentation training
+2025-05-12 12:44:23,303 - __main__ - INFO - Using configuration from: configs/mamba_binary_efficient.yaml
+2025-05-12 12:44:23,311 - __main__ - INFO - Set random seed to 42
+2025-05-12 12:44:23,559 - __main__ - INFO - Using device: cuda
+2025-05-12 12:44:23,560 - __main__ - INFO - Building Mamba-based binary segmentation model...
+2025-05-12 12:44:23,849 - __main__ - INFO - Model has 472,421 trainable parameters
+2025-05-12 12:44:24,421 - __main__ - INFO - Creating data loaders...
+2025-05-12 12:44:25,075 - __main__ - INFO - Created dataloaders - Train: 2094 batches, Val: 995 batches
+2025-05-12 12:44:25,075 - __main__ - INFO - Creating optimizer: AdamW
+2025-05-12 12:44:25,076 - __main__ - INFO - Created OneCycleLR scheduler with max_lr=5e-05
+2025-05-12 12:44:25,107 - __main__ - INFO - Starting training loop...
+2025-05-12 12:44:25,107 - utils.training - INFO - Starting training from epoch 0

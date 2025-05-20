@@ -1,21 +1,69 @@
-# train.py
-
 import os
 import torch
 import yaml
 import argparse
 import logging
+import time
 from pathlib import Path
 from datetime import datetime
-from torch.cuda.amp import GradScaler
+import json
 
 # Import project components
-from utils.training import Trainer
-from models.video_model import build_model
+from models.binary_mamba_segmentation import build_model
 from datasets.davis import build_davis_dataloader
 from datasets.transforms import VideoSequenceAugmentation
-from losses.segmentation import BinarySegmentationLoss
-from losses.combined import CombinedLoss
+from utils.training import Trainer
+
+import math
+
+
+def inspect_model(model):
+    """Print model details and parameter distributions to help diagnose issues."""
+    print("\nModel Architecture Overview:")
+    print(model)
+    
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    
+    print(f"\nTotal parameters: {total_params:,}")
+    print(f"Trainable parameters: {trainable_params:,}")
+    
+    # Check for problematic parameter initialization
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            mean = param.data.mean().item()
+            std = param.data.std().item()
+            min_val = param.data.min().item()
+            max_val = param.data.max().item()
+            
+            if std < 1e-8 or math.isnan(std) or math.isnan(mean):
+                print(f"WARNING - Problem with {name}: mean={mean:.6f}, std={std:.6f}, range=[{min_val:.6f}, {max_val:.6f}]")
+    
+    # Check for non-changing parameters after a forward pass
+    x = torch.randn(2, 3, 3, 240, 320).to(next(model.parameters()).device)
+    before = {}
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            before[name] = param.data.clone()
+    
+    # Forward pass
+    with torch.enable_grad():
+        outputs = model(x)
+        loss = outputs['logits'].abs().mean()
+        loss.backward()
+    
+    # Check which parameters didn't get gradients
+    no_grad_params = []
+    for name, param in model.named_parameters():
+        if param.requires_grad and param.grad is None:
+            no_grad_params.append(name)
+    
+    if no_grad_params:
+        print("\nParameters without gradients:")
+        for name in no_grad_params:
+            print(f"- {name}")
+    
+    return model
 
 def setup_logging(log_dir):
     """Set up logging configuration for training."""
@@ -36,11 +84,13 @@ def setup_logging(log_dir):
 
 def parse_args():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Binary Video Segmentation Training')
-    parser.add_argument('--config', type=str, default='configs/binary_seg.yaml',
+    parser = argparse.ArgumentParser(description='Mamba-based Video Segmentation Training')
+    parser.add_argument('--config', type=str, default='configs/mamba_binary_efficient.yaml',
                         help='Path to configuration file')
     parser.add_argument('--resume', type=str, help='Path to checkpoint for resuming training')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
+    parser.add_argument('--find-lr', action='store_true', help='Run learning rate finder before training')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode with smaller dataset')
     return parser.parse_args()
 
 def set_seed(seed):
@@ -49,125 +99,157 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    import numpy as np
+    np.random.seed(seed)
+    import random
+    random.seed(seed)
+
+def test_model_forward(model, device):
+    """Test the model's forward pass with a small batch."""
+    # Create dummy input
+    batch = 2
+    frames = 3
+    channels = 3
+    height = 128
+    width = 128
+    x = torch.randn(batch, frames, channels, height, width).to(device)
+    
+    # Run forward pass
+    with torch.inference_mode():
+        outputs = model(x)
+    
+    # Check output shape
+    print("\nTest forward pass:")
+    print(f"Input shape: {x.shape}")
+    print(f"Output logits shape: {outputs['logits'].shape}")
+    print(f"Output masks shape: {outputs['pred_masks'].shape}")
+    print(f"Memory used: {torch.cuda.max_memory_allocated() / 1e9:.2f} GB")
+    
+    return outputs
 
 def main():
-    # Parse arguments and set up environment
+    # Parse arguments
     args = parse_args()
     
     # Load configuration
     with open(args.config) as f:
         config = yaml.safe_load(f)
     
-    # Create directories
+    # Set up directories and logging
     checkpoint_dir = Path(config['paths']['checkpoints'])
     log_dir = Path(config['paths'].get('logs', 'logs'))
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     
-    # Set up logging
     logger = setup_logging(log_dir)
-    logger.info(f"Starting binary video segmentation training with config: {args.config}")
+    logger.info(f"Starting Mamba-based binary video segmentation training")
+    logger.info(f"Using configuration from: {args.config}")
     
-    # Set reproducibility seed
+    # Save config to checkpoint directory for reference
+    with open(checkpoint_dir / 'config.yaml', 'w') as f:
+        yaml.dump(config, f)
+    
+    # Set reproducibility
     set_seed(args.seed)
     logger.info(f"Set random seed to {args.seed}")
     
+    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
     
     # Build model
-    logger.info("Building binary segmentation model...")
+    logger.info("Building Mamba-based binary segmentation model...")
     model = build_model(config).to(device)
-    logger.info(f"Model created: {type(model).__name__}")
+    model = inspect_model(model)  # Add this line
+    # Build model
+
     
-    # Create dataloaders
+    # Print model summary
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    logger.info(f"Model has {total_params:,} trainable parameters")
+    
+    # Test model forward pass
+    if not args.resume:
+        test_model_forward(model, device)
+    
+    # Create data transforms
     transform = VideoSequenceAugmentation(
         img_size=tuple(config['dataset']['img_size']),
         **config['dataset']['augmentation']
     )
-    logger.info(f"Created data augmentation with image size: {config['dataset']['img_size']}")
     
     # Create dataloaders
-    dataset_params = {
-        'batch_size': config['dataset']['batch_size'],
-        'img_size': config['dataset']['img_size'],
-        'sequence_length': config['dataset']['sequence_length'],
-        'sequence_stride': config['dataset']['sequence_stride'],
-        'num_workers': config['dataset']['num_workers']
-    }
+    logger.info("Creating data loaders...")
     
-    logger.info("Creating train data loader...")
+    if args.debug:
+        # Use smaller dataset for debugging
+        config['dataset']['sequence_length'] = min(config['dataset']['sequence_length'], 2)
+        config['dataset']['batch_size'] = 1
+    
     train_loader = build_davis_dataloader(
         root_path=config['paths']['davis_root'],
         split='train',
         transform=transform,
-        **dataset_params
+        **{k: v for k, v in config['dataset'].items() 
+           if k not in ['augmentation']}
     )
-    logger.info(f"Train loader created with {len(train_loader)} batches")
     
-    logger.info("Creating validation data loader...")
     val_loader = build_davis_dataloader(
         root_path=config['paths']['davis_root'],
         split='val',
-        transform=transform,
-        **dataset_params
+        transform=VideoSequenceAugmentation(
+            img_size=tuple(config['dataset']['img_size']),
+            train=False
+        ),
+        **{k: v for k, v in config['dataset'].items() 
+           if k not in ['augmentation']}
     )
-    logger.info(f"Validation loader created with {len(val_loader)} batches")
+    
+    logger.info(f"Created dataloaders - Train: {len(train_loader)} batches, Val: {len(val_loader)} batches")
     
     # Create optimizer
     logger.info(f"Creating optimizer: {config['optimizer']['type']}")
     optimizer_class = getattr(torch.optim, config['optimizer']['type'])
-    optimizer_params = {k: v for k, v in config['optimizer'].items() if k != 'type'}
+    optimizer_params = {k: v for k, v in config['optimizer'].items() 
+                       if k != 'type'}
     optimizer = optimizer_class(model.parameters(), **optimizer_params)
     
-    # Create learning rate scheduler
+    # Create scheduler
     scheduler = None
-    step_scheduler_batch = False  # Default value
+    step_scheduler_batch = False
     
-    if 'scheduler' in config and config['scheduler']['type']:
-        logger.info(f"Creating scheduler: {config['scheduler']['type']}")
+    if config['scheduler']['type'] == 'onecycle':
+        # Calculate total steps
+        total_steps = len(train_loader) * config['training']['epochs']
         
-        if config['scheduler']['type'] == 'cosine':
-            # Convert min_lr to float (handling YAML scientific notation)
-            min_lr = float(config['scheduler']['min_lr'])
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer,
-                T_max=config['training']['epochs'],
-                eta_min=min_lr
-            )
-        elif config['scheduler']['type'] == 'step':
-            scheduler = torch.optim.lr_scheduler.StepLR(
-                optimizer,
-                step_size=config['scheduler']['step_size'],
-                gamma=config['scheduler']['gamma']
-            )
-        elif config['scheduler']['type'] == 'reduce_on_plateau':
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer,
-                mode='min',
-                factor=config['scheduler']['factor'],
-                patience=config['scheduler']['patience'],
-                min_lr=float(config['scheduler']['min_lr'])
-            )
-        elif config['scheduler']['type'] == 'onecycle':
-            from torch.optim.lr_scheduler import OneCycleLR
-            
-            # Calculate total steps for full training
-            total_steps = len(train_loader) * config['training']['epochs']
-            
-            # Create OneCycleLR scheduler with parameters from config
-            scheduler = OneCycleLR(
-                optimizer,
-                max_lr=config['optimizer']['lr'],
-                total_steps=total_steps,
-                pct_start=config['scheduler'].get('pct_start', 0.1),
-                div_factor=config['scheduler'].get('div_factor', 25),
-                final_div_factor=config['scheduler'].get('final_div_factor', 1000),
-                anneal_strategy='cos'
-            )
-            step_scheduler_batch = True  # This scheduler should be stepped per batch
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer,
+            max_lr=config['optimizer']['lr'],
+            total_steps=total_steps,
+            pct_start=0.1,
+            div_factor=25,
+            final_div_factor=1000
+        )
+        step_scheduler_batch = True
+        logger.info(f"Created OneCycleLR scheduler with max_lr={config['optimizer']['lr']}")
+    elif config['scheduler']['type'] == 'cosine':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=config['training']['epochs'],
+            eta_min=float(config['scheduler']['min_lr'])
+        )
+        logger.info(f"Created CosineAnnealingLR scheduler")
+    elif config['scheduler']['type'] == 'plateau':
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, 
+            mode='min', 
+            factor=0.5, 
+            patience=5,
+            min_lr=float(config['scheduler']['min_lr'])
+        )
+        logger.info(f"Created ReduceLROnPlateau scheduler")
     
-    # Create trainer with visualization and evaluation capabilities
+    # Create trainer
     trainer = Trainer(
         model=model,
         optimizer=optimizer,
@@ -177,59 +259,74 @@ def main():
         checkpoint_dir=str(checkpoint_dir),
         mixed_precision=config['training']['mixed_precision'],
         gradient_accumulation_steps=config['training'].get('gradient_accumulation_steps', 1),
-        step_scheduler_batch=step_scheduler_batch,  # Pass the flag here
-        # Add parameters for visualization and evaluation
+        step_scheduler_batch=step_scheduler_batch,
         enable_visualization=config.get('visualization', {}).get('enabled', True),
         visualization_dir=config.get('visualization', {}).get('dir', 'visualizations'),
         visualization_interval=config.get('visualization', {}).get('interval', 5),
         enable_evaluation=config.get('evaluation', {}).get('enabled', True)
     )
-    logger.info("Trainer initialized")
     
     # Resume from checkpoint if specified
     if args.resume:
-        logger.info(f"Resuming training from checkpoint: {args.resume}")
+        logger.info(f"Resuming from checkpoint: {args.resume}")
         trainer.load_checkpoint(args.resume)
     
-    # Start training
-    logger.info("Starting training process...")
+    # Optionally find optimal learning rate
+    if args.find_lr:
+        logger.info("Running learning rate finder...")
+        suggested_lr = trainer.find_learning_rate(
+            train_loader=train_loader,
+            start_lr=1e-6,
+            end_lr=1e-2,
+            num_iterations=50
+        )
+        
+        # Update optimizer learning rate
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = suggested_lr
+        
+        logger.info(f"Updated learning rate to {suggested_lr:.1e}")
+    
+    # Train model
+    logger.info("Starting training loop...")
+    start_time = time.time()
+    
     trainer.train(
         train_loader=train_loader,
         val_loader=val_loader,
         num_epochs=config['training']['epochs'],
         validate_every=config['training']['validate_every'],
-        save_every=config['training']['save_every']
+        save_every=config['training']['save_every'],
+        patience=config.get('training', {}).get('patience', 15)  # Early stopping patience
     )
+    
+    training_time = time.time() - start_time
+    logger.info(f"Training completed in {training_time / 3600:.2f} hours")
     
     # Final evaluation
-    logger.info("Training completed. Running final evaluation...")
-    final_metrics = trainer.evaluate(
-        val_loader=val_loader,
-        current_epoch='final',
-        visualize=True
-    )
+    logger.info("Running final evaluation...")
+    final_metrics = trainer.evaluate(val_loader, visualize=True)
     
-    # Log final results
+    # Log final metrics
     logger.info("Final evaluation results:")
-    logger.info(f"IoU: {final_metrics['iou']:.4f}")
-    logger.info(f"F1 Score: {final_metrics['f1']:.4f}")
-    logger.info(f"Precision: {final_metrics['precision']:.4f}")
-    logger.info(f"Recall: {final_metrics['recall']:.4f}")
-    logger.info(f"Training and evaluation completed successfully!")
+    for key, value in final_metrics.items():
+        logger.info(f"{key}: {value:.4f}")
     
-    # Save final model configuration and performance
-    results_file = checkpoint_dir / 'final_results.yaml'
-    with open(results_file, 'w') as f:
-        yaml.dump({
-            'config': config,
-            'final_metrics': {
-                k: float(v) if isinstance(v, (float, int)) else v 
-                for k, v in final_metrics.items()
-            },
-            'completed': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }, f)
+    # Save final results
+    with open(checkpoint_dir / 'final_results.json', 'w') as f:
+        json.dump({k: float(v) for k, v in final_metrics.items()}, f, indent=2)
+        
+    logger.info(f"All results saved to {checkpoint_dir}")
     
-    logger.info(f"Results saved to {results_file}")
+    # Print final summary
+    logger.info("\n" + "="*50)
+    logger.info("Training Summary:")
+    logger.info(f"Configuration: {args.config}")
+    logger.info(f"Model parameters: {total_params:,}")
+    logger.info(f"Total training time: {training_time / 3600:.2f} hours")
+    logger.info(f"Best validation loss: {trainer.best_val_loss:.4f}")
+    logger.info(f"Final metrics: J&F={final_metrics.get('J&F', 0):.4f}, IoU={final_metrics.get('J_mean', 0):.4f}")
+    logger.info("="*50)
 
 if __name__ == '__main__':
     main()

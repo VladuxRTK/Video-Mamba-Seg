@@ -1,19 +1,3 @@
-
-
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-import json
-from pathlib import Path
-from typing import Dict, Optional, List
-import logging
-from tqdm import tqdm
-
-from losses.combined import CombinedLoss
-from losses.temporal_consistency import TemporalConsistencyLoss
-
-from losses.segmentation import BinarySegmentationLoss
-
 import torch
 import torch.nn as nn
 import numpy as np
@@ -21,18 +5,21 @@ import os
 import logging
 import matplotlib.pyplot as plt
 import cv2
+import math
+import time
+import copy
 from tqdm import tqdm
-from torch.amp import autocast, GradScaler
 from typing import Dict, List, Optional, Tuple, Union
-from models.backbone import TemporalFeatureBank
+from collections import deque
+from pathlib import Path
+from torch.utils.data import DataLoader
 
-
-# At the top of your file, outside any class
+# Helper function to safely extract item from tensor
 def get_item_safely(value):
     """Safely extract item from tensor or return float value."""
     if hasattr(value, 'item'):
         return value.item()
-    return value
+    return float(value)
 
 class Trainer:
     """Handles the complete training process including checkpointing and validation."""
@@ -42,19 +29,18 @@ class Trainer:
         model: nn.Module,
         optimizer: torch.optim.Optimizer,
         config: Dict,
-        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+        scheduler: Optional = None,
         device: str = 'cuda',
         checkpoint_dir: str = 'checkpoints',
         mixed_precision: bool = True,
         gradient_accumulation_steps: int = 1,
-        step_scheduler_batch: bool = False,  # Add this parameter
-        # Add new parameters for visualization and evaluation
+        step_scheduler_batch: bool = False,
         enable_visualization: bool = True,
         visualization_dir: str = 'visualizations',
         visualization_interval: int = 5,
         enable_evaluation: bool = True
     ):
-        # Existing initialization code
+        # Initialize model and optimization components
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
@@ -66,58 +52,46 @@ class Trainer:
         self.epoch = 0
         self.best_val_loss = float('inf')
         self.global_step = 0
+        self.current_epoch = 0
         
-        # Replace the current criterion with binary segmentation loss
-        # Initialize the loss function with the weights provided in the constructor
+        # Get loss function from config
+        from losses.segmentation import BinarySegmentationLoss
         self.criterion = BinarySegmentationLoss(
             ce_weight=config['losses']['ce_weight'],
             dice_weight=config['losses']['dice_weight'],
-            boundary_weight=config['losses'].get('boundary_weight', 0.0)  # Add default for backward compatibility
+            boundary_weight=config['losses'].get('boundary_weight', 0.0)
         )
-        # Modern mixed precision setup
-        self.scaler = torch.amp.GradScaler('cuda') if mixed_precision else None
+        
+        # Training settings - using old PyTorch syntax
+        self.scaler = torch.cuda.amp.GradScaler() if mixed_precision else None
         self.mixed_precision = mixed_precision
         self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.eval_metrics = {}
-
         self.grad_clip_value = config['training'].get('grad_clip_value', 0.0)
-        self.step_scheduler_batch = step_scheduler_batch  # Use the parameter value
-    
-    # Rest of your initialization code...
+        self.step_scheduler_batch = step_scheduler_batch
         
         # Setup logging
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.INFO)
         
-        # Initialize visualization and evaluation tools if enabled
+        # Visualization and evaluation settings
         self.enable_visualization = enable_visualization
         self.visualization_interval = visualization_interval
+        self.visualization_dir = Path(visualization_dir)
         if enable_visualization:
-            from utils.visualization import VideoSegmentationVisualizer
-            self.visualization_dir = Path(visualization_dir)
             self.visualization_dir.mkdir(parents=True, exist_ok=True)
+            from utils.visualization import VideoSegmentationVisualizer
             self.visualizer = VideoSegmentationVisualizer(save_dir=self.visualization_dir)
         
         self.enable_evaluation = enable_evaluation
         if enable_evaluation:
             from utils.evaluation import DAVISEvaluator
             self.evaluator = DAVISEvaluator()
-
+        
+        self.eval_metrics = {}
     
     def get_current_lr(self):
         """Get the current learning rate from the optimizer."""
         for param_group in self.optimizer.param_groups:
             return param_group['lr']
-
-    @property
-    def current_epoch(self):
-        """Get the current training epoch."""
-        return getattr(self, '_current_epoch', 0)
-        
-    @current_epoch.setter
-    def current_epoch(self, epoch):
-        """Set the current training epoch."""
-        self._current_epoch = epoch
     
     def save_checkpoint(self, metrics: Dict[str, float], name: str = 'model') -> None:
         """Saves a checkpoint of the current training state."""
@@ -135,17 +109,18 @@ class Trainer:
         torch.save(checkpoint, save_path)
         
         # Also save metrics separately for easy access
+        import json
         metrics_path = self.checkpoint_dir / f'{name}_metrics.json'
         with open(metrics_path, 'w') as f:
-            json.dump(metrics, f, indent=2)
+            json.dump({k: float(v) for k, v in metrics.items()}, f, indent=2)
         
         self.logger.info(f"Saved checkpoint and metrics to {self.checkpoint_dir}")
     
     def load_checkpoint(self, path: str, load_best: bool = True) -> None:
         """Loads a checkpoint and restores the training state."""
         path = Path(path)
-        if load_best:
-            path = path.parent / f'{path.stem}_best.pth'
+        if load_best and not path.name.startswith('model_best'):
+            path = path.parent / f'model_best.pth'
         
         if not path.exists():
             self.logger.warning(f"No checkpoint found at {path}")
@@ -168,287 +143,263 @@ class Trainer:
         
         self.logger.info(f"Restored checkpoint from {path} (epoch {self.epoch})")
     
+    def _reset_temporal_states(self, module):
+        """Reset temporal states in stateful modules."""
+        if hasattr(module, 'features') and isinstance(module.features, deque):
+            module.features.clear()
     
     def train_epoch(self, train_loader):
-        """
-        Run a single training epoch with binary segmentation handling.
-        
-        This method processes each batch of video data, computes the loss,
-        performs backpropagation, and tracks training metrics throughout the epoch.
-        
-        Args:
-            train_loader: DataLoader providing training batches
-            
-        Returns:
-            Dictionary containing average loss values and metrics for the epoch
-        """
+        """Run a single training epoch with memory and performance optimizations."""
         self.model.train()
         
         # Initialize tracking variables
-        total_loss = 0.0
-        total_ce_loss = 0.0
-        total_dice_loss = 0.0
-        total_boundary_loss = 0.0  # Track boundary loss
-        
-        # Progress metrics
-        batch_count = len(train_loader)
-        processed_samples = 0
+        running_loss = 0.0
+        running_ce_loss = 0.0
+        running_dice_loss = 0.0
+        running_boundary_loss = 0.0
+        running_samples = 0
         
         # Use tqdm for progress tracking
-        with tqdm(total=batch_count, desc=f"Epoch {self.current_epoch}") as pbar:
+        with tqdm(total=len(train_loader), desc=f"Epoch {self.current_epoch}") as pbar:
             for batch_idx, batch in enumerate(train_loader):
                 # Move data to device
                 frames = batch['frames'].to(self.device)  # [B, T, C, H, W]
                 masks = batch['masks'].to(self.device)    # [B, T, H, W]
                 
-                # Track batch size for averaging
+                # Increment sample count
                 batch_size = frames.shape[0]
-                processed_samples += batch_size
+                running_samples += batch_size
                 
-                # Mixed precision training if enabled
-                with torch.amp.autocast('cuda', enabled=self.mixed_precision):
-                    # Forward pass - model outputs dict with 'logits' and 'pred_masks'
+                # Free memory explicitly
+                torch.cuda.empty_cache()
+                
+                # Forward pass with mixed precision - using old PyTorch syntax
+                if self.mixed_precision:
+                    with torch.cuda.amp.autocast():
+                        outputs = self.model(frames)
+                        loss_dict = self.criterion(outputs, {'masks': masks})
+                        
+                        # Extract loss components
+                        loss = loss_dict['loss']
+                        ce_loss = loss_dict.get('ce_loss', 0.0)
+                        dice_loss = loss_dict.get('dice_loss', 0.0)
+                        boundary_loss = loss_dict.get('boundary_loss', 0.0)
+                else:
+                    # Standard forward pass without mixed precision
                     outputs = self.model(frames)
-                    
-                    # Compute loss - expects dict with 'masks' key
                     loss_dict = self.criterion(outputs, {'masks': masks})
                     
-                    # Get individual loss components
-                    loss = loss_dict['loss']  # Total loss
+                    # Extract loss components
+                    loss = loss_dict['loss']
                     ce_loss = loss_dict.get('ce_loss', 0.0)
                     dice_loss = loss_dict.get('dice_loss', 0.0)
-                    boundary_loss = loss_dict.get('boundary_loss', 0.0)  # Get boundary loss
+                    boundary_loss = loss_dict.get('boundary_loss', 0.0)
                 
-                # Backward pass with gradient accumulation
+                # Handle gradient accumulation
                 if self.gradient_accumulation_steps > 1:
-                    # Scale loss for gradient accumulation
+                    # Scale loss
                     scaled_loss = loss / self.gradient_accumulation_steps
-                    self.scaler.scale(scaled_loss).backward()
                     
-                    # Only update weights after accumulating enough gradients
+                    # Backward pass
+                    if self.mixed_precision:
+                        self.scaler.scale(scaled_loss).backward()
+                        
+                        # Update weights after accumulating enough gradients
+                        if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
+                            # Apply gradient clipping if configured
+                            if self.grad_clip_value > 0:
+                                self.scaler.unscale_(self.optimizer)
+                                nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_value)
+                            
+                            # Step optimizer and scaler
+                            self.scaler.step(self.optimizer)
+                            self.scaler.update()
+                            self.optimizer.zero_grad(set_to_none=True)
+                    else:
+                        scaled_loss.backward()
+                        
+                        if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
+                            if self.grad_clip_value > 0:
+                                nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_value)
+                            
+                            self.optimizer.step()
+                            self.optimizer.zero_grad(set_to_none=True)
+                    
+                    # Update scheduler if batch-based
                     if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
-                        # Unscale gradients for clipping (if used)
-                        if self.grad_clip_value > 0:
-                            self.scaler.unscale_(self.optimizer)
-                            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_value)
-                        
-                        # Optimizer step with scaler for mixed precision
-                        self.scaler.step(self.optimizer)
-                        self.scaler.update()
-                        self.optimizer.zero_grad(set_to_none=True)  # More memory efficient
-                        
-                        # Step the scheduler if it's batch-based
                         if self.scheduler is not None and self.step_scheduler_batch:
                             self.scheduler.step()
                 else:
-                    # Standard backward and update (no accumulation)
-                    self.scaler.scale(loss).backward()
+                    # Standard backward and update without accumulation
+                    if self.mixed_precision:
+                        self.scaler.scale(loss).backward()
+                        
+                        # Apply gradient clipping if configured
+                        if self.grad_clip_value > 0:
+                            self.scaler.unscale_(self.optimizer)
+                            nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_value)
+                        
+                        # Step optimizer and scaler
+                        self.scaler.step(self.optimizer)
+                        self.scaler.update()
+                        self.optimizer.zero_grad(set_to_none=True)
+                    else:
+                        loss.backward()
+                        
+                        if self.grad_clip_value > 0:
+                            nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_value)
+                        
+                        self.optimizer.step()
+                        self.optimizer.zero_grad(set_to_none=True)
                     
-                    # Gradient clipping if configured
-                    if self.grad_clip_value > 0:
-                        self.scaler.unscale_(self.optimizer)
-                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip_value)
-                    
-                    self.scaler.step(self.optimizer)
-                    self.scaler.update()
-                    self.optimizer.zero_grad(set_to_none=True)
-                    
-                    # Step the scheduler if it's batch-based
+                    # Update scheduler if batch-based
                     if self.scheduler is not None and self.step_scheduler_batch:
                         self.scheduler.step()
                 
-                # Update tracking metrics
-                total_loss += loss.item() * batch_size
-                total_ce_loss += ce_loss * batch_size if isinstance(ce_loss, float) else ce_loss.item() * batch_size
-                total_dice_loss += dice_loss * batch_size if isinstance(dice_loss, float) else dice_loss.item() * batch_size
+                # Update loss tracking with proper detachment and moving to CPU
+                running_loss += get_item_safely(loss) * batch_size
+                running_ce_loss += get_item_safely(ce_loss) * batch_size
+                running_dice_loss += get_item_safely(dice_loss) * batch_size
+                running_boundary_loss += get_item_safely(boundary_loss) * batch_size
                 
-                # Update boundary loss tracking if present
-                if boundary_loss != 0:
-                    total_boundary_loss += boundary_loss * batch_size if isinstance(boundary_loss, float) else boundary_loss.item() * batch_size
-                
-                # Update progress bar with current loss values
-                postfix_dict = {
-                    'loss': f"{loss.item():.4f}",
-                    'ce': f"{ce_loss if isinstance(ce_loss, float) else ce_loss.item():.4f}",
-                    'dice': f"{dice_loss if isinstance(dice_loss, float) else dice_loss.item():.4f}",
-                    'lr': f"{self.get_current_lr():.6f}"
-                }
-                
-                # Add boundary loss to progress bar if available
-                if boundary_loss != 0:
-                    postfix_dict['bound'] = f"{boundary_loss if isinstance(boundary_loss, float) else boundary_loss.item():.4f}"
-                    
+                # Update progress bar
                 pbar.update(1)
-                pbar.set_postfix(postfix_dict)
+                pbar.set_postfix({
+                    'loss': f"{get_item_safely(loss):.4f}",
+                    'dice': f"{get_item_safely(dice_loss):.4f}",
+                    'lr': f"{self.get_current_lr():.6f}"
+                })
                 
-                # Optional logging for step-wise metrics (e.g., TensorBoard)
-                if hasattr(self, 'log_metrics') and callable(getattr(self, 'log_metrics')):
-                    step = batch_idx + (self.current_epoch * batch_count)
-                    log_dict = {
-                        'train/loss': loss.item(),
-                        'train/ce_loss': ce_loss if isinstance(ce_loss, float) else ce_loss.item(),
-                        'train/dice_loss': dice_loss if isinstance(dice_loss, float) else dice_loss.item(),
-                        'train/lr': self.get_current_lr()
-                    }
-                    
-                    # Add boundary loss to logging if available
-                    if boundary_loss != 0:
-                        log_dict['train/boundary_loss'] = boundary_loss if isinstance(boundary_loss, float) else boundary_loss.item()
-                        
-                    self.log_metrics(log_dict, step)
-            
-            # Compute average metrics for the epoch
-            avg_loss = total_loss / processed_samples
-            avg_ce_loss = total_ce_loss / processed_samples
-            avg_dice_loss = total_dice_loss / processed_samples
-            avg_boundary_loss = total_boundary_loss / processed_samples if total_boundary_loss > 0 else 0.0
-            
-            # Step the scheduler if it's epoch-based
-            if self.scheduler is not None and not self.step_scheduler_batch:
-                if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                    self.scheduler.step(avg_loss)
-                else:
-                    self.scheduler.step()
-            
-            # Log epoch completion
-            log_message = (
-                f"Epoch {self.current_epoch} completed: "
-                f"Loss: {avg_loss:.4f}, CE: {avg_ce_loss:.4f}, Dice: {avg_dice_loss:.4f}"
-            )
-            
-            # Add boundary loss to log if non-zero
-            if avg_boundary_loss > 0:
-                log_message += f", Boundary: {avg_boundary_loss:.4f}"
-            
-            log_message += f", LR: {self.get_current_lr():.6f}"
-            self.logger.info(log_message)
-            
-            # Return average metrics
-            result = {
-                'loss': avg_loss,
-                'ce_loss': avg_ce_loss,
-                'dice_loss': avg_dice_loss
-            }
-            
-            # Add boundary loss to results if non-zero
-            if avg_boundary_loss > 0:
-                result['boundary_loss'] = avg_boundary_loss
-            
-            return result
+                # Clean up memory
+                del frames, masks, outputs, loss_dict
+                
+                # Update global step counter
+                self.global_step += 1
+        
+        # Calculate average metrics
+        avg_loss = running_loss / running_samples
+        avg_ce_loss = running_ce_loss / running_samples
+        avg_dice_loss = running_dice_loss / running_samples
+        avg_boundary_loss = running_boundary_loss / running_samples
+        
+        # Update epoch-based scheduler
+        if self.scheduler is not None and not self.step_scheduler_batch:
+            if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                self.scheduler.step(avg_loss)
+            else:
+                self.scheduler.step()
+        
+        # Return metrics
+        return {
+            'loss': avg_loss,
+            'ce_loss': avg_ce_loss,
+            'dice_loss': avg_dice_loss,
+            'boundary_loss': avg_boundary_loss
+        }
     
     @torch.no_grad()
     def validate(self, val_loader: DataLoader) -> Dict[str, float]:
-        """Run validation with memory optimizations."""
+        """Validate the model with memory-efficient processing."""
         self.model.eval()
-        total_loss = 0
-        num_batches = len(val_loader)
+        total_loss = 0.0
         
-        # For evaluation
+        # Accumulate predictions and ground truth for metrics
         all_predictions = []
         all_ground_truths = []
-        sequence_names = []
+        all_sequences = []
         
-        # Process in smaller chunks to avoid memory issues
-        max_sequences_per_chunk = 20  # Adjust based on your system's RAM
-        
-        with torch.no_grad():
-            pbar = tqdm(val_loader, desc='Validating')
-            for batch_idx, batch in enumerate(pbar):
-                try:
-                    frames = batch['frames'].to(self.device)
-                    masks = batch['masks'].to(self.device)
-                    sequence_name = batch['sequence'][0] if 'sequence' in batch else f"sequence_{batch_idx}"
-                    
-                    with torch.amp.autocast('cuda', enabled=self.mixed_precision):
-                        outputs = self.model(frames)
-                        losses = self.criterion(outputs, {'masks': masks})
-                        total_loss += losses['loss'].item()  # Use 'loss' instead of 'total_loss'
-                    
-                    # Store predictions for evaluation (but limit memory usage)
-                    if len(all_predictions) < max_sequences_per_chunk:
-                        all_predictions.append(outputs['pred_masks'][0].cpu())
-                        all_ground_truths.append(masks[0].cpu())
-                        sequence_names.append(sequence_name)
-                    
-                    # Visualize only occasionally
-                    if self.enable_visualization and self.global_step % (self.visualization_interval * 10) == 0 and batch_idx % 50 == 0:
-                        self.visualizer.visualize_sequence(
-                            frames=frames[0].cpu(),
-                            pred_masks=outputs['pred_masks'][0].cpu(),
-                            gt_masks=masks[0].cpu(),
-                            sequence_name=f"{sequence_name}_epoch_{self.epoch}_lite",
-                            max_frames=2  # Only visualize 2 frames, not the whole sequence
-                        )
-                    
-                    # Clear memory
-                    del outputs, frames, masks
-                    torch.cuda.empty_cache()
-                    
-                    # Evaluate and reset if we've accumulated enough sequences
-                    if len(all_predictions) >= max_sequences_per_chunk or batch_idx == num_batches - 1:
-                        if all_predictions and self.enable_evaluation:
-                            eval_metrics = self._evaluate_current_predictions(all_predictions, all_ground_truths, sequence_names)
-                            
-                            # Clear predictions to free memory
-                            all_predictions = []
-                            all_ground_truths = []
-                            sequence_names = []
-                        
-                        # Force garbage collection
-                        import gc
-                        gc.collect()
-                        torch.cuda.empty_cache()
-                    
-                except RuntimeError as e:
-                    if "out of memory" in str(e):
-                        self.logger.warning(f"OOM during validation at batch {batch_idx}. Clearing memory and continuing...")
-                        if hasattr(torch.cuda, 'empty_cache'):
-                            torch.cuda.empty_cache()
-                        
-                        # Clear accumulated data
-                        all_predictions = []
-                        all_ground_truths = []
-                        sequence_names = []
-                        
-                        continue
-                    else:
-                        raise e
-        
-        # Calculate metrics
-        metrics = {'val_loss': total_loss / num_batches}
-        
-        # Add evaluation metrics if available
-        if hasattr(self, 'eval_metrics') and self.eval_metrics:
-            for key, value in self.eval_metrics.items():
-                metrics[key] = value
-        
-        return metrics
-
-    def _evaluate_current_predictions(self, predictions, ground_truths, seq_names):
-        """Helper method to evaluate accumulated predictions in chunks."""
-        if self.enable_evaluation and predictions:
+        # Process in smaller batches if needed
+        for batch_idx, batch in enumerate(tqdm(val_loader, desc="Validating")):
             try:
-                eval_results = self.evaluator.evaluate(
-                    predictions=predictions,
-                    ground_truths=ground_truths,
-                    sequence_names=seq_names
+                # Get data
+                frames = batch['frames'].to(self.device)
+                masks = batch['masks'].to(self.device)
+                sequence = batch.get('sequence', [f"seq_{batch_idx}"])
+                
+                # Forward pass - using old PyTorch syntax
+                if self.mixed_precision:
+                    with torch.cuda.amp.autocast():
+                        outputs = self.model(frames)
+                        loss_dict = self.criterion(outputs, {'masks': masks})
+                        loss = loss_dict['loss']
+                else:
+                    outputs = self.model(frames)
+                    loss_dict = self.criterion(outputs, {'masks': masks})
+                    loss = loss_dict['loss']
+                
+                # Track loss
+                total_loss += loss.item() * frames.shape[0]
+                
+                # Store predictions for evaluation (detach and move to CPU to save memory)
+                if self.enable_evaluation:
+                    # Store only the first item in batch to save memory
+                    all_predictions.append(outputs['pred_masks'][0].cpu())
+                    all_ground_truths.append(masks[0].cpu())
+                    all_sequences.append(sequence[0] if isinstance(sequence, list) else sequence)
+                
+                # Visualize predictions occasionally
+                if self.enable_visualization and batch_idx % self.visualization_interval == 0:
+                    self._visualize_prediction(
+                        frames=frames[0].cpu(),
+                        pred_masks=outputs['pred_masks'][0].cpu(),
+                        gt_masks=masks[0].cpu(),
+                        sequence_name=f"{sequence[0] if isinstance(sequence, list) else sequence}_epoch_{self.current_epoch}"
+                    )
+                
+                # Free memory
+                del frames, masks, outputs, loss_dict
+                torch.cuda.empty_cache()
+                
+            except RuntimeError as e:
+                if "out of memory" in str(e):
+                    self.logger.warning(f"Out of memory during validation. Skipping batch {batch_idx}")
+                    torch.cuda.empty_cache()
+                    continue
+                else:
+                    raise e
+        
+        # Calculate average loss
+        avg_loss = total_loss / len(val_loader.dataset)
+        
+        # Calculate evaluation metrics if enabled
+        metrics = {'val_loss': avg_loss}
+        
+        if self.enable_evaluation and all_predictions:
+            # Evaluate models using DAVIS metrics
+            try:
+                eval_results = self.evaluator.evaluate_binary_segmentation(
+                    predictions=all_predictions,
+                    ground_truths=all_ground_truths,
+                    sequence_names=all_sequences
                 )
                 
-                # Store global metrics for reporting
-                self.eval_metrics = eval_results['global']
+                # Add global metrics to result
+                for key, value in eval_results['global'].items():
+                    metrics[key] = value
                 
-                # Only log abbreviated results
-                self.logger.info("\nPartial Evaluation Results:")
-                self.logger.info(f"Global: J&F: {eval_results['global']['J&F']:.4f}, "
-                                f"J_mean: {eval_results['global']['J_mean']:.4f}, "
-                                f"T_mean: {eval_results['global']['T_mean']:.4f}")
-                
-                return eval_results['global']
+                # Save evaluation metrics for future reference
+                self.eval_metrics = metrics
                 
             except Exception as e:
                 self.logger.error(f"Error during evaluation: {str(e)}")
-                return {}
-        return {}
+        
+        return metrics
+    
+    def _visualize_prediction(self, frames, pred_masks, gt_masks, sequence_name):
+        """Create and save visualization for a prediction."""
+        if not self.enable_visualization:
+            return
+            
+        try:
+            self.visualizer.visualize_sequence(
+                frames=frames,
+                pred_masks=pred_masks,
+                gt_masks=gt_masks,
+                sequence_name=sequence_name,
+                max_frames=min(4, frames.shape[0])  # Limit number of frames for efficiency
+            )
+        except Exception as e:
+            self.logger.error(f"Error creating visualization: {str(e)}")
     
     def train(
         self,
@@ -456,133 +407,190 @@ class Trainer:
         val_loader: Optional[DataLoader] = None,
         num_epochs: int = 100,
         validate_every: int = 1,
-        save_every: int = 10
+        save_every: int = 10,
+        patience: int = 15  # Early stopping patience
     ):
-        """
-        Main training loop with validation and checkpointing.
-        
-        Args:
-            train_loader: DataLoader for training data
-            val_loader: Optional DataLoader for validation data
-            num_epochs: Total number of epochs to train
-            validate_every: Frequency of validation in epochs
-            save_every: Frequency of checkpointing in epochs
-        """
+        """Main training loop with early stopping."""
         self.logger.info(f"Starting training from epoch {self.epoch}")
         
+        # Early stopping variables
+        best_val_loss = float('inf')
+        no_improvement_count = 0
+        
         for epoch in range(self.epoch, num_epochs):
-            for module in self.model.modules():
-                if isinstance(module, TemporalFeatureBank):
-                    module.features.clear()
+            # Reset temporal state at the start of each epoch
+            self.model.apply(self._reset_temporal_states)
+            
+            # Update epoch counters
             self.epoch = epoch
-            self.current_epoch = epoch  # Add this line to update the property
+            self.current_epoch = epoch
             
-            # Training
-            train_loss = self.train_epoch(train_loader)
-            #self.logger.info(f"Epoch {epoch} training loss: {train_loss['loss']:.4f}")
-
+            # Training phase
+            train_metrics = self.train_epoch(train_loader)
+            self.logger.info(f"Epoch {epoch} training - Loss: {train_metrics['loss']:.4f}")
             
-            # Validation
+            # Validation phase
             if val_loader is not None and (epoch + 1) % validate_every == 0:
-                val_losses = self.validate(val_loader)
+                val_metrics = self.validate(val_loader)
+                val_loss = val_metrics['val_loss']
+                
                 self.logger.info(
-                    f"Epoch {epoch} validation: " +
-                    " ".join(f"{k}: {v:.4f}" for k, v in val_losses.items())
+                    f"Epoch {epoch} validation - Loss: {val_loss:.4f}"
                 )
                 
-                # Save checkpoint if it's the best model so far
-                if val_losses['val_loss'] < self.best_val_loss:
-                    self.best_val_loss = val_losses['val_loss']
-                    self.save_checkpoint(val_losses, name='model_best')
+                # Check for improvement
+                if val_loss < best_val_loss:
+                    improvement = best_val_loss - val_loss
+                    best_val_loss = val_loss
+                    no_improvement_count = 0
+                    
+                    # Save best model
+                    self.logger.info(f"Validation loss improved by {improvement:.6f}. Saving model...")
+                    self.save_checkpoint(val_metrics, name='model_best')
+                else:
+                    no_improvement_count += 1
+                    self.logger.info(f"No improvement for {no_improvement_count} epochs.")
+                    
+                    # Early stopping check
+                    if no_improvement_count >= patience:
+                        self.logger.info(f"Early stopping triggered after {epoch} epochs")
+                        break
                 
                 # Regular checkpoint saving
                 if (epoch + 1) % save_every == 0:
-                    self.save_checkpoint(val_losses, name=f'model_epoch_{epoch}')
-            
-            # Update learning rate
-            if self.scheduler is not None:
-                self.scheduler.step()
+                    self.save_checkpoint(val_metrics, name=f'model_epoch_{epoch}')
         
         self.logger.info("Training completed!")
+        
+        # Load best model at the end
+        self.load_checkpoint(os.path.join(self.checkpoint_dir, 'model_best.pth'))
+        
+        return best_val_loss
+    
+    def find_learning_rate(
+        self,
+        train_loader: DataLoader,
+        start_lr: float = 1e-7,
+        end_lr: float = 1,
+        num_iterations: int = 100,
+        step_mode: str = "exp"
+    ):
+        """Find optimal learning rate using the learning rate range test."""
+        self.model.train()
+        self.optimizer.zero_grad()
+        
+        # Save original model and optimizer state
+        old_state_dict = copy.deepcopy(self.model.state_dict())
+        old_optimizer_state_dict = copy.deepcopy(self.optimizer.state_dict())
+        
+        # Initialize learning rate and lists to track values
+        if step_mode == "exp":
+            lr_factor = (end_lr / start_lr) ** (1 / (num_iterations - 1))
+            lr_schedule = [start_lr * (lr_factor ** i) for i in range(num_iterations)]
+        else:  # Linear schedule
+            lr_schedule = np.linspace(start_lr, end_lr, num_iterations)
+        
+        losses = []
+        log_lrs = []
+        best_loss = float('inf')
+        
+        # Set initial learning rate
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] = start_lr
+        
+        # Interactive plot setup
+        plt.figure(figsize=(10, 6))
+        plt.ion()
+        ax = plt.gca()
+        ax.set_xlabel('Learning Rate (log scale)')
+        ax.set_ylabel('Loss')
+        ax.set_xscale('log')
+        line, = ax.plot([], [], 'b-')
+        
+        # Run learning rate finder
+        iterator = iter(train_loader)
+        for i, lr in enumerate(tqdm(lr_schedule, desc="Finding optimal learning rate")):
+            # Set learning rate
+            for param_group in self.optimizer.param_groups:
+                param_group['lr'] = lr
+            
+            # Get batch
+            try:
+                batch = next(iterator)
+            except StopIteration:
+                iterator = iter(train_loader)
+                batch = next(iterator)
+            
+            # Move data to device
+            frames = batch['frames'].to(self.device)
+            masks = batch['masks'].to(self.device)
+            
+            # Forward pass - using old PyTorch syntax
+            if self.mixed_precision:
+                with torch.cuda.amp.autocast():
+                    outputs = self.model(frames)
+                    loss_dict = self.criterion(outputs, {'masks': masks})
+                    loss = loss_dict['loss']
+            else:
+                outputs = self.model(frames)
+                loss_dict = self.criterion(outputs, {'masks': masks})
+                loss = loss_dict['loss']
+            
+            # Backward pass
+            loss.backward()
+            
+            # Update weights
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            
+            # Record values for plotting
+            losses.append(loss.item())
+            log_lrs.append(math.log10(lr))
+            
+            # Update interactive plot
+            line.set_data(log_lrs, losses)
+            ax.relim()
+            ax.autoscale_view()
+            plt.draw()
+            plt.pause(0.01)
+            
+            # Check for divergence
+            if i > 0 and loss.item() > 4 * best_loss:
+                break
+            
+            if loss.item() < best_loss:
+                best_loss = loss.item()
+        
+        # Restore original model and optimizer state
+        self.model.load_state_dict(old_state_dict)
+        self.optimizer.load_state_dict(old_optimizer_state_dict)
+        
+        # Find suggested learning rate (point of steepest descent)
+        # This is the point where the loss is decreasing the fastest
+        derivatives = [(losses[i+1] - losses[i]) / (log_lrs[i+1] - log_lrs[i]) 
+                      for i in range(len(losses)-1)]
+        min_derivative_idx = np.argmin(derivatives)
+        suggested_lr = 10 ** log_lrs[min_derivative_idx]
+        
+        # Finalize plot
+        plt.ioff()
+        plt.figure(figsize=(10, 6))
+        plt.plot(log_lrs, losses)
+        plt.scatter([log_lrs[min_derivative_idx]], [losses[min_derivative_idx]], 
+                   color='red', s=100, marker='o')
+        plt.xlabel('Learning Rate (log scale)')
+        plt.ylabel('Loss')
+        plt.xscale('log')
+        plt.axvline(x=log_lrs[min_derivative_idx], color='r', linestyle='--')
+        plt.title(f'Learning Rate Finder - Suggested LR: {suggested_lr:.1e}')
+        plt.savefig(os.path.join(self.checkpoint_dir, 'lr_finder.png'))
+        plt.close()
+        
+        self.logger.info(f"Suggested learning rate: {suggested_lr:.1e}")
+        
+        return suggested_lr
 
-    def compute_binary_metrics(predictions, ground_truths):
-        """
-        Compute metrics for binary video segmentation evaluation.
-        
-        This function calculates IoU (Intersection over Union), precision, recall,
-        and F1 score for binary segmentation masks. Each metric is calculated per frame
-        and then averaged across all frames in all sequences.
-        
-        Args:
-            predictions: List of prediction tensors, each with shape [T, 1, H, W]
-            ground_truths: List of ground truth tensors, each with shape [T, H, W]
-            
-        Returns:
-            Dictionary containing averaged metrics:
-            - iou: Intersection over Union (Jaccard index)
-            - precision: Precision (TP / (TP + FP))
-            - recall: Recall (TP / (TP + FN))
-            - f1: F1 score (2 * precision * recall / (precision + recall))
-        """
-        # Initialize accumulators
-        total_iou = 0.0
-        total_precision = 0.0
-        total_recall = 0.0
-        total_f1 = 0.0
-        total_frames = 0
-        
-        # Process each sequence
-        for pred, gt in zip(predictions, ground_truths):
-            # Convert predictions to binary (threshold at 0.5)
-            # Ensure we're working with the correct dimensions
-            if pred.dim() == 4:  # [T, 1, H, W]
-                binary_pred = (pred.squeeze(1) > 0.5).bool()
-            else:  # [T, H, W]
-                binary_pred = (pred > 0.5).bool()
-            
-            # Convert ground truth to binary (values > 0 are foreground)
-            binary_gt = (gt > 0).bool()
-            
-            # Process each frame in the sequence
-            for t in range(binary_pred.shape[0]):
-                # Calculate true positives, false positives, false negatives
-                tp = (binary_pred[t] & binary_gt[t]).sum().float()
-                fp = (binary_pred[t] & ~binary_gt[t]).sum().float()
-                fn = (~binary_pred[t] & binary_gt[t]).sum().float()
-                
-                # Calculate metrics (add small epsilon to avoid division by zero)
-                epsilon = 1e-8
-                intersection = tp
-                union = tp + fp + fn
-                
-                iou = intersection / (union + epsilon)
-                precision = tp / (tp + fp + epsilon)
-                recall = tp / (tp + fn + epsilon)
-                f1 = 2 * precision * recall / (precision + recall + epsilon)
-                
-                # Accumulate metrics
-                total_iou += iou.item()
-                total_precision += precision.item()
-                total_recall += recall.item()
-                total_f1 += f1.item()
-                total_frames += 1
-                
-                # Log individual frame metrics for debugging (optional)
-                # logger.debug(f"Frame {total_frames}: IoU={iou.item():.4f}, F1={f1.item():.4f}")
-        
-        # Handle empty case
-        if total_frames == 0:
-            logger.warning("No frames were processed during metric calculation")
-            return {'iou': 0.0, 'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
-        
-        # Calculate and return averages
-        return {
-            'iou': total_iou / total_frames,
-            'precision': total_precision / total_frames,
-            'recall': total_recall / total_frames,
-            'f1': total_f1 / total_frames
-        }
-    def evaluate(self, val_loader, visualize=False):
+    def evaluate(self, val_loader, visualize=True):
         """
         Evaluate model on validation data.
         
@@ -593,83 +601,117 @@ class Trainer:
         Returns:
             Dictionary of evaluation metrics
         """
-        # Import visualizer if visualization is requested
-        if visualize:
-            from utils.visualization import BinarySegmentationVisualizer
-            visualizer = BinarySegmentationVisualizer(
-                save_dir=os.path.join(self.checkpoint_dir, 'visualizations')
-            )
-        
         self.model.eval()
         
         # Initialize tracking variables
         total_loss = 0.0
-        batch_sizes = 0
         all_predictions = []
         all_ground_truths = []
-        all_frames = []
-        all_seq_names = []
+        all_sequences = []
         
         # Evaluate without gradient computation
         with torch.no_grad():
-            for batch in tqdm(val_loader, desc="Validating"):
-                # Get data from batch
+            for batch_idx, batch in enumerate(tqdm(val_loader, desc="Evaluating")):
+                # Get data
                 frames = batch['frames'].to(self.device)
                 masks = batch['masks'].to(self.device)
-                sequence_names = batch.get('sequence_name', [f"seq_{i}" for i in range(frames.shape[0])])
+                sequence = batch.get('sequence', [f"seq_{batch_idx}"])
                 
-                # Forward pass
-                outputs = self.model(frames)
+                # Forward pass - using old PyTorch syntax
+                if self.mixed_precision:
+                    with torch.cuda.amp.autocast():
+                        outputs = self.model(frames)
+                        loss_dict = self.criterion(outputs, {'masks': masks})
+                        loss = loss_dict['loss']
+                else:
+                    outputs = self.model(frames)
+                    loss_dict = self.criterion(outputs, {'masks': masks})
+                    loss = loss_dict['loss']
                 
-                # Compute loss
-                loss_dict = self.criterion(outputs, {'masks': masks})
-                loss = loss_dict.get('loss', loss_dict.get('total_loss', 0.0))
+                # Track loss
+                total_loss += loss.item() * frames.shape[0]
                 
-                # Track metrics
-                batch_size = frames.shape[0]
-                total_loss += loss.item() * batch_size
-                batch_sizes += batch_size
+                # Store predictions for metrics calculation
+                all_predictions.append(outputs['pred_masks'][0].cpu())
+                all_ground_truths.append(masks[0].cpu())
+                all_sequences.append(sequence[0] if isinstance(sequence, list) else sequence)
                 
-                # Store predictions and ground truth for metrics
-                pred_masks = outputs['pred_masks']  # [B, T, 1, H, W]
+                # Create visualizations for specific batches
+                if visualize and batch_idx % self.visualization_interval == 0:
+                    self._visualize_prediction(
+                        frames=frames[0].cpu(),
+                        pred_masks=outputs['pred_masks'][0].cpu(),
+                        gt_masks=masks[0].cpu(),
+                        sequence_name=f"{sequence[0]}_final_eval"
+                    )
                 
-                # Store results for each sequence
-                for i in range(frames.shape[0]):
-                    all_predictions.append(pred_masks[i])
-                    all_ground_truths.append(masks[i])
-                    all_frames.append(frames[i])
-                    all_seq_names.append(sequence_names[i])
+                # Clean up memory
+                del frames, masks, outputs
+                torch.cuda.empty_cache()
         
         # Calculate average loss
-        avg_loss = total_loss / batch_sizes
+        avg_loss = total_loss / len(val_loader.dataset)
         
-        # Compute segmentation metrics
-        metrics = self.compute_binary_metrics(all_predictions, all_ground_truths)
-        metrics['loss'] = avg_loss
+        # Calculate metrics
+        metrics = {'loss': avg_loss}
         
-        # Generate visualizations if requested
-        if visualize:
-            num_viz = min(5, len(all_frames))
-            for i in range(num_viz):
-                viz_path = os.path.join(
-                    visualizer.save_dir, 
-                    f"{all_seq_names[i]}_epoch{getattr(self, 'current_epoch', 0)}.png"
-                )
-                visualizer.visualize_predictions(
-                    all_frames[i].unsqueeze(0),
-                    all_predictions[i].unsqueeze(0),
-                    all_ground_truths[i].unsqueeze(0),
-                    save_path=viz_path
-                )
-        
-        # Log metrics
-        self.logger.info(
-            f"Validation - Loss: {avg_loss:.4f}, "
-            f"IoU: {metrics['iou']:.4f}, "
-            f"F1: {metrics['f1']:.4f}, "
-            f"Precision: {metrics['precision']:.4f}, "
-            f"Recall: {metrics['recall']:.4f}"
-        )
+        if self.enable_evaluation and all_predictions:
+            # Get comprehensive evaluation metrics
+            eval_results = self.evaluator.evaluate_binary_segmentation(
+                predictions=all_predictions,
+                ground_truths=all_ground_truths,
+                sequence_names=all_sequences
+            )
+            
+            # Add global metrics to results
+            for key, value in eval_results['global'].items():
+                metrics[key] = value
+            
+            # Print evaluation summary
+            self.logger.info("\nEvaluation Results:")
+            for key, value in metrics.items():
+                self.logger.info(f"{key}: {value:.4f}")
         
         return metrics
-            
+
+    def test_model_speed(self, frames, num_iterations=10):
+        """Test the model's forward and backward pass speed."""
+        self.model.train()
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
+        criterion = nn.BCEWithLogitsLoss()
+        
+        # Create dummy target
+        B, T, C, H, W = frames.shape
+        target = torch.rand(B, T, 1, H, W).to(frames.device)
+        target = (target > 0.5).float()
+        
+        # Warmup
+        for _ in range(2):
+            outputs = self.model(frames)
+            loss = criterion(outputs['logits'], target)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        
+        # Benchmark
+        torch.cuda.synchronize()
+        start_time = time.time()
+        
+        for _ in range(num_iterations):
+            outputs = self.model(frames)
+            loss = criterion(outputs['logits'], target)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        
+        torch.cuda.synchronize()
+        end_time = time.time()
+        
+        avg_time = (end_time - start_time) / num_iterations
+        fps = (B * T) / avg_time
+        
+        print(f"Average iteration time: {avg_time:.4f} seconds")
+        print(f"Frames per second: {fps:.2f}")
+        print(f"Memory used: {torch.cuda.max_memory_allocated() / 1e9:.2f} GB")
+        
+        return avg_time, fps
