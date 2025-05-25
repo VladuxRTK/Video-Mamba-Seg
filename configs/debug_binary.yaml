@@ -1,0 +1,52 @@
+model:
+  input_dim: 3
+  hidden_dims: [32, 64, 128]  # Smaller model for debugging
+  d_state: 16
+  temporal_window: 2
+  dropout: 0.3
+  d_conv: 4
+  expand: 2
+
+dataset:
+  img_size: [120, 160]  # Smaller images for faster iteration
+  sequence_length: 2
+  sequence_stride: 2
+  batch_size: 8
+  num_workers: 4
+  augmentation:
+    scale_range: [0.95, 1.05]  # Minimal augmentation
+    rotation_range: [-2, 2]
+    brightness: 0.05
+    contrast: 0.05
+    saturation: 0.05
+    hue: 0.02
+    p_flip: 0.5
+
+training:
+  epochs: 10  # Short training for debugging
+  mixed_precision: true
+  validate_every: 2
+  save_every: 5
+  gradient_accumulation_steps: 1
+  grad_clip_value: 0.1
+
+optimizer:
+  type: 'AdamW'
+  lr: 2.0e-6  # Very conservative
+  weight_decay: 0.01
+
+scheduler:
+  type: 'cosine'
+  min_lr: 1.0e-7
+
+losses:
+  ce_weight: 1.0   # Higher weight for BCE/Focal loss
+  dice_weight: 1.0
+  boundary_weight: 0.0
+  temporal_weight: 0.5
+
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/debug_binary'
+  logs: 'logs/debug_binary'
+  visualizations: 'visualizations/debug_binary'

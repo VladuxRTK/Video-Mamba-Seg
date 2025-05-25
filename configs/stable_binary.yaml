@@ -1,0 +1,55 @@
+# Stable binary segmentation configuration
+model:
+  input_dim: 3
+  hidden_dims: [64, 128, 256]
+  d_state: 32
+  temporal_window: 4
+  dropout: 0.15  # Slightly more dropout for stability
+  d_conv: 4
+  expand: 2
+
+dataset:
+  img_size: [120, 160]
+  sequence_length: 4  # Longer sequences for better temporal learning
+  sequence_stride: 2
+  batch_size: 2  # Smaller batches for stability
+  num_workers: 4
+  augmentation:
+    scale_range: [0.9, 1.1]  # Less aggressive augmentation
+    rotation_range: [-5, 5]
+    brightness: 0.1
+    contrast: 0.1
+    saturation: 0.1
+    hue: 0.05
+    p_flip: 0.5
+
+training:
+  epochs: 50
+  mixed_precision: true
+  validate_every: 2
+  save_every: 5
+  gradient_accumulation_steps: 4  # More stable gradients
+  grad_clip_value: 0.05  # Tighter gradient clipping
+
+optimizer:
+  type: 'AdamW'
+  lr: 5.0e-7  # Much lower learning rate for stability
+  weight_decay: 0.01
+  betas: [0.9, 0.95]  # Different momentum for stability
+
+scheduler:
+  type: 'cosine'
+  min_lr: 1.0e-8
+
+# Enhanced loss configuration
+losses:
+  ce_weight: 1.0
+  dice_weight: 2.0      # Higher dice weight
+  boundary_weight: 0.0
+  temporal_weight: 0.5  # Enable temporal consistency
+
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/stable_binary'
+  logs: 'logs/stable_binary'
+  visualizations: 'visualizations/stable_binary'

@@ -1,8 +1,10 @@
 # Mamba-based binary video segmentation configuration optimized for efficiency
+
 model:
   input_dim: 3
-  hidden_dims: [32, 64, 128]  # Appropriate feature dimensions for binary segmentation
-  d_state: 16                # Mamba state dimension
+  hidden_dims: [64, 128, 256]  # Increase channel dimensions
+  d_state: 32  # Increase state dimension
+  temporal_window: 4
   temporal_window: 3         # Temporal context window
   dropout: 0.2               # Regularization to prevent overfitting
   d_conv: 4                  # Mamba convolution dimension
@@ -31,7 +33,7 @@ training:
   validate_every: 1
   save_every: 5
   gradient_accumulation_steps: 2  # Effective batch size of 4
-  grad_clip_value: 0.5      # Prevent exploding gradients
+  grad_clip_value: 0.1      # Prevent exploding gradients
   patience: 15              # Early stopping patience
 
 # Optimization Configuration
@@ -70,3 +72,16 @@ visualization:
 evaluation:
   enabled: true
   metrics: ["iou", "f1", "precision", "recall"]
+
+results:
+  save_every_epoch: true
+  save_plots: true
+  save_detailed_logs: true
+
+# Update paths to include results
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/mamba_binary'
+  logs: 'logs/mamba_binary'
+  visualizations: 'visualizations/mamba_binary'
+  results: 'checkpoints/mamba_binary/results'  # New results directory

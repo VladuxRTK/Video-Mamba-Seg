@@ -8,6 +8,8 @@ import cv2
 from typing import Dict, List, Optional, Tuple, Union
 import os
 
+import torch.nn.functional as F
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -104,6 +106,7 @@ class BinarySegmentationVisualizer:
             plt.close()
         
         return fig
+        
 class VideoSegmentationVisualizer:
     """
     Comprehensive visualization tools for video instance segmentation results.
@@ -136,38 +139,46 @@ class VideoSegmentationVisualizer:
         additional_colors = plt.cm.hsv(np.linspace(0, 1, n - 20))[:, :3]
         return np.vstack([base_colors, additional_colors])
     
-    def visualize_frame(
-        self,
-        frame: torch.Tensor,            # [C, H, W]
-        pred_masks: torch.Tensor,       # [N, H, W] or [1, H, W]
-        gt_mask: Optional[torch.Tensor] = None,  # [H, W]
-        frame_idx: int = 0,
-        show_legend: bool = True,
-        title: Optional[str] = None
-    ) -> plt.Figure:
-        """
-        Create a visualization of a single frame with predictions and ground truth.
-        
-        Args:
-            frame: RGB frame tensor [C, H, W]
-            pred_masks: Predicted instance masks [N, H, W] or binary mask [1, H, W]
-            gt_mask: Optional ground truth mask [H, W]
-            frame_idx: Index of the frame in the sequence
-            show_legend: Whether to show color legend
-            title: Optional title for the plot
-            
-        Returns:
-            Matplotlib figure with visualization
-        """
+    def visualize_frame(self, frame, pred_masks, gt_mask=None, frame_idx=0, show_legend=True, title=None):
+        """Create a visualization of a single frame with predictions and ground truth."""
         # Convert inputs to numpy
         frame_np = frame.cpu().permute(1, 2, 0).numpy()
         if frame_np.max() <= 1.0:
             frame_np = (frame_np * 255).astype(np.uint8)
         
+        # Get frame dimensions
+        H, W = frame_np.shape[:2]
+        
+        # Ensure pred_masks matches frame dimensions
+        if pred_masks.shape[-2:] != (H, W):
+            print(f"Warning: Pred masks shape {pred_masks.shape[-2:]} doesn't match frame shape {(H, W)}. Resizing...")
+            # Resize pred_masks to match frame
+            if pred_masks.dim() == 3:  # [N, h, w]
+                pred_masks = F.interpolate(
+                    pred_masks.unsqueeze(0),  # Add batch dim
+                    size=(H, W),
+                    mode='nearest'
+                ).squeeze(0)
+            else:  # [1, h, w]
+                pred_masks = F.interpolate(
+                    pred_masks.unsqueeze(0),  # Add batch dim
+                    size=(H, W),
+                    mode='nearest'
+                ).squeeze(0)
+        
+        # Similarly check gt_mask if present
+        if gt_mask is not None and gt_mask.shape != (H, W):
+            print(f"Warning: GT mask shape {gt_mask.shape} doesn't match frame shape {(H, W)}. Resizing...")
+            gt_mask = F.interpolate(
+                gt_mask.unsqueeze(0).unsqueeze(0),  # Add batch and channel dims
+                size=(H, W),
+                mode='nearest'
+            ).squeeze(0).squeeze(0)
+        
         # Determine layout based on whether ground truth is provided
         n_cols = 3 if gt_mask is not None else 2
         fig, axes = plt.subplots(1, n_cols, figsize=(self.figsize_per_frame[0] * n_cols, 
-                                                   self.figsize_per_frame[1]))
+                                                self.figsize_per_frame[1]))
         
         # Plot original frame
         axes[0].imshow(frame_np)
@@ -221,7 +232,7 @@ class VideoSegmentationVisualizer:
                 mask = gt_np == idx
                 color = self.colors[i % len(self.colors)]
                 gt_vis[mask] = self.overlay_alpha * np.array(color * 255) + \
-                              (1 - self.overlay_alpha) * gt_vis[mask]
+                            (1 - self.overlay_alpha) * gt_vis[mask]
             
             axes[2].imshow(gt_vis)
             axes[2].set_title("Ground Truth")
@@ -231,7 +242,7 @@ class VideoSegmentationVisualizer:
             if show_legend and len(unique_ids) > 0:
                 patches = [
                     mpatches.Patch(color=self.colors[i % len(self.colors)], 
-                                  label=f"GT {idx}")
+                                label=f"GT {idx}")
                     for i, idx in enumerate(unique_ids)
                 ]
                 axes[2].legend(handles=patches, loc='upper right', fontsize='small')
@@ -242,7 +253,8 @@ class VideoSegmentationVisualizer:
             
         plt.tight_layout()
         return fig
-    
+            
+      
     def visualize_sequence(
         self,
         frames: torch.Tensor,            # [T, C, H, W]

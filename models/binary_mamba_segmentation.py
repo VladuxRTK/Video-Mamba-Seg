@@ -43,7 +43,7 @@ class VideoMambaBlock(nn.Module):
         return x
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through Mamba with spatial reshaping."""
+        """Forward pass through Mamba with spatial reshaping and normalization."""
         # Store original shape
         b, c, h, w = x.shape
 
@@ -58,6 +58,12 @@ class VideoMambaBlock(nn.Module):
         
         # Restore spatial dimensions
         x_out = self._restore_spatial(x_seq, h, w)
+        
+        # Add batch normalization here
+        if not hasattr(self, 'norm'):
+            self.norm = nn.BatchNorm2d(c).to(x.device)
+        
+        x_out = self.norm(x_out)
         
         return x_out
 
@@ -210,10 +216,33 @@ class BinaryVideoMambaSegmentation(nn.Module):
         self.temporal_smooth = nn.Conv3d(
             1, 1, kernel_size=(3, 1, 1), padding=(1, 0, 0)
         )
+
+        # Add at the end of __init__ in BinaryVideoMambaSegmentation
+        self.apply(self._init_weights)
+        print("Applied model weight initialization for better convergence")
     
+        # Add this method in the BinaryVideoMambaSegmentation class
+    def _init_weights(self, m):
+        """Initialize model weights for better convergence."""
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            if m.bias is not None:
+                # For final prediction layer, initialize with negative bias to reduce false positives
+                if hasattr(m, '_is_final_layer'):
+                    nn.init.constant_(m.bias, -2.0)  # Negative bias to start conservative
+                else:
+                    nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
     def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Forward pass with frame-by-frame processing and temporal smoothing."""
         B, T, C, H, W = x.shape
+        print(f"Input shape: [B={B}, T={T}, C={C}, H={H}, W={W}]")
         
         # Process each frame independently to avoid memory issues
         all_logits = []
@@ -221,30 +250,104 @@ class BinaryVideoMambaSegmentation(nn.Module):
         for t in range(T):
             # Get current frame
             frame = x[:, t]  # [B, C, H, W]
+            print(f"  Frame {t} shape: {frame.shape}")
             
             # Process through backbone
             features = self.backbone(frame)
+            print(f"  Backbone output: {len(features)} feature maps")
+            for i, feat in enumerate(features):
+                print(f"    Feature {i} shape: {feat.shape}")
             
             # Fuse multi-scale features
             fused = self.feature_fusion(features)
+            print(f"  Fused features shape: {fused.shape}")
             
             # Generate segmentation mask
             logits = self.seg_head(fused)
+            print(f"  Logits shape: {logits.shape}")
             all_logits.append(logits)
         
         # Stack results along temporal dimension
         stacked_logits = torch.stack(all_logits, dim=1)  # [B, T, 1, H, W]
+        print(f"Stacked logits shape: {stacked_logits.shape}")
         
         # Apply temporal smoothing
         smooth_logits = stacked_logits.permute(0, 2, 1, 3, 4)  # [B, 1, T, H, W]
+        print(f"Permuted for temporal smoothing: {smooth_logits.shape}")
+        
         smooth_logits = self.temporal_smooth(smooth_logits)
+        print(f"After temporal smoothing: {smooth_logits.shape}")
+        
         smooth_logits = smooth_logits.permute(0, 2, 1, 3, 4)  # [B, T, 1, H, W]
+        print(f"Final output shape: {smooth_logits.shape}")
+        
+        # Check for NaN values in outputs
+        if torch.isnan(smooth_logits).any():
+            print("WARNING: NaN values detected in output logits!")
+        
+        # Upsample logits to match input resolution
+        upsampled_logits = torch.nn.functional.interpolate(
+            smooth_logits.view(B*T, 1, smooth_logits.shape[3], smooth_logits.shape[4]),
+            size=(H, W),  # Original input size
+            mode='bilinear',
+            align_corners=False
+        ).view(B, T, 1, H, W)
+        
+        print(f"Upsampled logits shape: {upsampled_logits.shape}")
+        
+        # Generate raw probabilities
+        pred_probs = torch.sigmoid(upsampled_logits)
+        print(f"Raw prediction value range: {pred_probs.min().item():.4f} to {pred_probs.max().item():.4f}")
+        
+        # 🚀 ADD ADAPTIVE THRESHOLDING HERE
+        expected_fg_ratio = 0.12  # Based on your GT statistics (11.5% foreground)
+        adaptive_masks = []
+        
+        for b in range(B):
+            batch_adaptive = []
+            for t in range(T):
+                # Get current frame prediction [1, H, W]
+                curr_pred = pred_probs[b, t, 0]  # Remove channel dimension
+                
+                # Calculate adaptive threshold for this frame
+                flat_pred = curr_pred.flatten()
+                sorted_pred, _ = torch.sort(flat_pred, descending=True)
+                threshold_idx = int(len(flat_pred) * expected_fg_ratio)
+                
+                if threshold_idx < len(sorted_pred):
+                    adaptive_threshold = sorted_pred[threshold_idx].item()
+                else:
+                    adaptive_threshold = 0.5  # Fallback
+                
+                # Ensure threshold is reasonable
+                adaptive_threshold = max(0.1, min(0.9, adaptive_threshold))
+                
+                # Apply adaptive threshold
+                adaptive_mask = (curr_pred > adaptive_threshold).float()
+                batch_adaptive.append(adaptive_mask)
+                
+                # Debug info
+                pred_fg_ratio = adaptive_mask.mean().item()
+                print(f"  Frame {t}: Adaptive thresh={adaptive_threshold:.3f}, FG ratio={pred_fg_ratio:.3f}")
+            
+            # Stack temporal dimension for this batch
+            batch_masks = torch.stack(batch_adaptive, dim=0)  # [T, H, W]
+            adaptive_masks.append(batch_masks)
+        
+        # Stack batch dimension
+        adaptive_masks = torch.stack(adaptive_masks, dim=0)  # [B, T, H, W] 
+        
+        # Add channel dimension to match expected format
+        adaptive_masks = adaptive_masks.unsqueeze(2)  # [B, T, 1, H, W]
+        
+        print(f"Adaptive masks shape: {adaptive_masks.shape}")
+        print(f"Adaptive prediction FG ratio: {adaptive_masks.mean().item():.4f}")
         
         return {
-            'logits': smooth_logits,
-            'pred_masks': torch.sigmoid(smooth_logits)
+            'logits': upsampled_logits,           # For loss computation [B, T, 1, H, W]
+            'pred_masks': pred_probs,             # Raw probabilities [B, T, 1, H, W]
+            'adaptive_masks': adaptive_masks      # Adaptive thresholded masks [B, T, 1, H, W]
         }
-
 def build_model(config: Dict) -> nn.Module:
     """Build binary video segmentation model with Mamba backbone."""
     if 'model' in config:

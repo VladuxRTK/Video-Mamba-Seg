@@ -1,0 +1,355 @@
+2025-05-24 11:39:57,719 - __main__ - INFO - Starting Mamba-based binary video segmentation training
+2025-05-24 11:39:57,719 - __main__ - INFO - Using configuration from: configs/debug_binary.yaml
+2025-05-24 11:39:57,726 - __main__ - INFO - Set random seed to 42
+2025-05-24 11:39:57,965 - __main__ - INFO - Using device: cuda
+2025-05-24 11:39:57,966 - __main__ - INFO - Building Mamba-based binary segmentation model...
+2025-05-24 11:39:59,290 - __main__ - INFO - Model has 472,869 trainable parameters
+2025-05-24 11:39:59,312 - __main__ - INFO - Creating data loaders...
+2025-05-24 11:39:59,990 - __main__ - INFO - Created dataloaders - Train: 2094 batches, Val: 995 batches
+2025-05-24 11:39:59,991 - __main__ - INFO - Creating optimizer: AdamW
+2025-05-24 11:39:59,991 - __main__ - INFO - Created CosineAnnealingLR scheduler with 5 epochs of warmup
+2025-05-24 11:40:00,037 - __main__ - INFO - Starting training loop...
+2025-05-24 11:40:00,038 - utils.training - INFO - Starting training from epoch 0
+2025-05-24 11:40:00,038 - utils.training - INFO - Results will be saved to: checkpoints/debug_binary/results
+2025-05-24 11:40:00,519 - utils.training - INFO - Batch 0: Raw fg ratio: 0.9541, Adaptive fg ratio: 0.3453
+2025-05-24 11:40:00,520 - utils.training - INFO - Batch 0: GT fg ratio: 0.1428
+2025-05-24 11:40:00,520 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.42x
+2025-05-24 11:40:00,549 - utils.training - INFO - Total gradient norm: 8.0196
+2025-05-24 11:40:00,549 - utils.training - INFO - Gradient norm for temporal_smooth.weight: 7.2030
+2025-05-24 11:40:00,550 - utils.training - INFO - Gradient norm for seg_head.1.bias: 2.2999
+2025-05-24 11:40:00,550 - utils.training - INFO - Gradient norm for seg_head.1.weight: 1.8102
+2025-05-24 11:40:00,550 - utils.training - INFO - Gradient norm for seg_head.3.weight: 1.4856
+2025-05-24 11:40:00,550 - utils.training - INFO - Gradient norm for temporal_smooth.bias: 0.9636
+2025-05-24 11:40:01,116 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:01,411 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:01,685 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:01,974 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:02,243 - utils.training - INFO - Batch 50: Raw fg ratio: 0.9455, Adaptive fg ratio: 0.3366
+2025-05-24 11:40:02,244 - utils.training - INFO - Batch 50: GT fg ratio: 0.1414
+2025-05-24 11:40:02,244 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.38x
+2025-05-24 11:40:02,244 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:02,541 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:02,843 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:03,126 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:03,456 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:03,752 - utils.training - INFO - Batch 100: Raw fg ratio: 0.9474, Adaptive fg ratio: 0.3693
+2025-05-24 11:40:03,752 - utils.training - INFO - Batch 100: GT fg ratio: 0.1656
+2025-05-24 11:40:03,753 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.23x
+2025-05-24 11:40:03,753 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:04,051 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:04,364 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:04,634 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:04,953 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:05,289 - utils.training - INFO - Batch 150: Raw fg ratio: 0.9117, Adaptive fg ratio: 0.1850
+2025-05-24 11:40:05,290 - utils.training - INFO - Batch 150: GT fg ratio: 0.0266
+2025-05-24 11:40:05,290 - utils.training - WARNING - Still predicting too much foreground! Ratio: 6.94x
+2025-05-24 11:40:05,290 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:05,606 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:05,949 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:06,233 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:06,573 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:06,883 - utils.training - INFO - Batch 200: Raw fg ratio: 0.7852, Adaptive fg ratio: 0.2214
+2025-05-24 11:40:06,884 - utils.training - INFO - Batch 200: GT fg ratio: 0.1049
+2025-05-24 11:40:06,884 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.11x
+2025-05-24 11:40:06,884 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:07,208 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:07,504 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:07,839 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:08,132 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:08,465 - utils.training - INFO - Batch 250: Raw fg ratio: 0.9492, Adaptive fg ratio: 0.3996
+2025-05-24 11:40:08,465 - utils.training - INFO - Batch 250: GT fg ratio: 0.0435
+2025-05-24 11:40:08,465 - utils.training - WARNING - Still predicting too much foreground! Ratio: 9.19x
+2025-05-24 11:40:08,466 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:08,759 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:09,030 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:09,292 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:09,594 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:09,903 - utils.training - INFO - Batch 300: Raw fg ratio: 0.9403, Adaptive fg ratio: 0.3845
+2025-05-24 11:40:09,904 - utils.training - INFO - Batch 300: GT fg ratio: 0.0026
+2025-05-24 11:40:09,904 - utils.training - WARNING - Still predicting too much foreground! Ratio: 149.12x
+2025-05-24 11:40:09,904 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:10,175 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:10,450 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:10,712 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:10,977 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:11,243 - utils.training - INFO - Batch 350: Raw fg ratio: 0.9459, Adaptive fg ratio: 0.3417
+2025-05-24 11:40:11,244 - utils.training - INFO - Batch 350: GT fg ratio: 0.1743
+2025-05-24 11:40:11,244 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 1.96x
+2025-05-24 11:40:11,245 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:11,523 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:11,792 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:12,066 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:12,349 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:12,638 - utils.training - INFO - Batch 400: Raw fg ratio: 0.9220, Adaptive fg ratio: 0.2935
+2025-05-24 11:40:12,638 - utils.training - INFO - Batch 400: GT fg ratio: 0.0698
+2025-05-24 11:40:12,638 - utils.training - WARNING - Still predicting too much foreground! Ratio: 4.21x
+2025-05-24 11:40:12,639 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:12,909 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:13,169 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:13,454 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:13,714 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:13,994 - utils.training - INFO - Batch 450: Raw fg ratio: 0.7928, Adaptive fg ratio: 0.1200
+2025-05-24 11:40:13,995 - utils.training - INFO - Batch 450: GT fg ratio: 0.1378
+2025-05-24 11:40:13,995 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 0.87x
+2025-05-24 11:40:13,996 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:14,269 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:14,526 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:14,841 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:15,151 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:15,522 - utils.training - INFO - Batch 500: Raw fg ratio: 0.9448, Adaptive fg ratio: 0.3404
+2025-05-24 11:40:15,523 - utils.training - INFO - Batch 500: GT fg ratio: 0.0695
+2025-05-24 11:40:15,523 - utils.training - WARNING - Still predicting too much foreground! Ratio: 4.90x
+2025-05-24 11:40:15,523 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:15,859 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:16,186 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:16,500 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:16,817 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:17,115 - utils.training - INFO - Batch 550: Raw fg ratio: 0.9477, Adaptive fg ratio: 0.3316
+2025-05-24 11:40:17,116 - utils.training - INFO - Batch 550: GT fg ratio: 0.0589
+2025-05-24 11:40:17,116 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.63x
+2025-05-24 11:40:17,116 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:17,380 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:17,694 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:18,033 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:18,316 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:18,615 - utils.training - INFO - Batch 600: Raw fg ratio: 0.8913, Adaptive fg ratio: 0.3057
+2025-05-24 11:40:18,616 - utils.training - INFO - Batch 600: GT fg ratio: 0.1284
+2025-05-24 11:40:18,616 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.38x
+2025-05-24 11:40:18,616 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:18,950 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:19,262 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:19,586 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:19,853 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:20,184 - utils.training - INFO - Batch 650: Raw fg ratio: 0.9571, Adaptive fg ratio: 0.3079
+2025-05-24 11:40:20,184 - utils.training - INFO - Batch 650: GT fg ratio: 0.0225
+2025-05-24 11:40:20,185 - utils.training - WARNING - Still predicting too much foreground! Ratio: 13.69x
+2025-05-24 11:40:20,185 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:20,478 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:20,758 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:21,007 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:21,304 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:21,627 - utils.training - INFO - Batch 700: Raw fg ratio: 0.9369, Adaptive fg ratio: 0.2911
+2025-05-24 11:40:21,628 - utils.training - INFO - Batch 700: GT fg ratio: 0.2753
+2025-05-24 11:40:21,628 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 1.06x
+2025-05-24 11:40:21,628 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:21,924 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:22,216 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:22,522 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:22,865 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:23,175 - utils.training - INFO - Batch 750: Raw fg ratio: 0.9343, Adaptive fg ratio: 0.2110
+2025-05-24 11:40:23,176 - utils.training - INFO - Batch 750: GT fg ratio: 0.5207
+2025-05-24 11:40:23,176 - utils.training - WARNING - Predicting too little foreground! Ratio: 0.41x
+2025-05-24 11:40:23,176 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:23,456 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:23,810 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:24,123 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:24,464 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:24,768 - utils.training - INFO - Batch 800: Raw fg ratio: 0.9503, Adaptive fg ratio: 0.3524
+2025-05-24 11:40:24,768 - utils.training - INFO - Batch 800: GT fg ratio: 0.1614
+2025-05-24 11:40:24,768 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.18x
+2025-05-24 11:40:24,769 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:25,080 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:25,406 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:25,746 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:26,005 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:26,270 - utils.training - INFO - Batch 850: Raw fg ratio: 0.9475, Adaptive fg ratio: 0.2612
+2025-05-24 11:40:26,270 - utils.training - INFO - Batch 850: GT fg ratio: 0.6253
+2025-05-24 11:40:26,270 - utils.training - WARNING - Predicting too little foreground! Ratio: 0.42x
+2025-05-24 11:40:26,271 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:26,546 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:26,882 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:27,239 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:27,582 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:27,874 - utils.training - INFO - Batch 900: Raw fg ratio: 0.9511, Adaptive fg ratio: 0.1954
+2025-05-24 11:40:27,875 - utils.training - INFO - Batch 900: GT fg ratio: 0.7491
+2025-05-24 11:40:27,875 - utils.training - WARNING - Predicting too little foreground! Ratio: 0.26x
+2025-05-24 11:40:27,875 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:28,173 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:28,499 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:28,888 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:29,209 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:29,544 - utils.training - INFO - Batch 950: Raw fg ratio: 0.9637, Adaptive fg ratio: 0.3805
+2025-05-24 11:40:29,544 - utils.training - INFO - Batch 950: GT fg ratio: 0.0541
+2025-05-24 11:40:29,544 - utils.training - WARNING - Still predicting too much foreground! Ratio: 7.04x
+2025-05-24 11:40:29,545 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:29,863 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:30,175 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:30,476 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:30,793 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:31,098 - utils.training - INFO - Batch 1000: Raw fg ratio: 0.9102, Adaptive fg ratio: 0.2108
+2025-05-24 11:40:31,098 - utils.training - INFO - Batch 1000: GT fg ratio: 0.1527
+2025-05-24 11:40:31,098 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 1.38x
+2025-05-24 11:40:31,098 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:31,411 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:31,698 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:32,020 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:32,300 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:32,571 - utils.training - INFO - Batch 1050: Raw fg ratio: 0.9388, Adaptive fg ratio: 0.1547
+2025-05-24 11:40:32,572 - utils.training - INFO - Batch 1050: GT fg ratio: 0.0264
+2025-05-24 11:40:32,572 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.85x
+2025-05-24 11:40:32,572 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:32,890 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:33,208 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:33,538 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:33,850 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:34,141 - utils.training - INFO - Batch 1100: Raw fg ratio: 0.9462, Adaptive fg ratio: 0.3580
+2025-05-24 11:40:34,142 - utils.training - INFO - Batch 1100: GT fg ratio: 0.0660
+2025-05-24 11:40:34,142 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.42x
+2025-05-24 11:40:34,142 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:34,449 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:34,786 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:35,120 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:35,452 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:35,776 - utils.training - INFO - Batch 1150: Raw fg ratio: 0.9749, Adaptive fg ratio: 0.3755
+2025-05-24 11:40:35,777 - utils.training - INFO - Batch 1150: GT fg ratio: 0.0399
+2025-05-24 11:40:35,777 - utils.training - WARNING - Still predicting too much foreground! Ratio: 9.41x
+2025-05-24 11:40:35,778 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:36,104 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:36,407 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:36,677 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:36,983 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:37,276 - utils.training - INFO - Batch 1200: Raw fg ratio: 0.8209, Adaptive fg ratio: 0.2010
+2025-05-24 11:40:37,276 - utils.training - INFO - Batch 1200: GT fg ratio: 0.1007
+2025-05-24 11:40:37,277 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.00x
+2025-05-24 11:40:37,277 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:37,586 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:37,868 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:38,135 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:38,436 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:38,729 - utils.training - INFO - Batch 1250: Raw fg ratio: 0.8530, Adaptive fg ratio: 0.1506
+2025-05-24 11:40:38,729 - utils.training - INFO - Batch 1250: GT fg ratio: 0.0133
+2025-05-24 11:40:38,729 - utils.training - WARNING - Still predicting too much foreground! Ratio: 11.34x
+2025-05-24 11:40:38,730 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:39,024 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:39,305 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:39,615 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:39,929 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:40,187 - utils.training - INFO - Batch 1300: Raw fg ratio: 0.8910, Adaptive fg ratio: 0.1428
+2025-05-24 11:40:40,187 - utils.training - INFO - Batch 1300: GT fg ratio: 0.0211
+2025-05-24 11:40:40,187 - utils.training - WARNING - Still predicting too much foreground! Ratio: 6.76x
+2025-05-24 11:40:40,188 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:40,468 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:40,747 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:41,084 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:41,428 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:41,705 - utils.training - INFO - Batch 1350: Raw fg ratio: 0.9593, Adaptive fg ratio: 0.3471
+2025-05-24 11:40:41,706 - utils.training - INFO - Batch 1350: GT fg ratio: 0.0774
+2025-05-24 11:40:41,706 - utils.training - WARNING - Still predicting too much foreground! Ratio: 4.48x
+2025-05-24 11:40:41,706 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:42,022 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:42,333 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:42,615 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:42,876 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:43,147 - utils.training - INFO - Batch 1400: Raw fg ratio: 0.9460, Adaptive fg ratio: 0.2478
+2025-05-24 11:40:43,148 - utils.training - INFO - Batch 1400: GT fg ratio: 0.1739
+2025-05-24 11:40:43,148 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 1.42x
+2025-05-24 11:40:43,148 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:43,417 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:43,696 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:44,005 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:44,280 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:44,549 - utils.training - INFO - Batch 1450: Raw fg ratio: 0.9628, Adaptive fg ratio: 0.3549
+2025-05-24 11:40:44,550 - utils.training - INFO - Batch 1450: GT fg ratio: 0.4536
+2025-05-24 11:40:44,550 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 0.78x
+2025-05-24 11:40:44,550 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:44,832 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:45,136 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:45,412 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:45,704 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:45,975 - utils.training - INFO - Batch 1500: Raw fg ratio: 0.9623, Adaptive fg ratio: 0.3490
+2025-05-24 11:40:45,976 - utils.training - INFO - Batch 1500: GT fg ratio: 0.0539
+2025-05-24 11:40:45,976 - utils.training - WARNING - Still predicting too much foreground! Ratio: 6.48x
+2025-05-24 11:40:45,977 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:46,241 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:46,517 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:46,826 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:47,093 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:47,397 - utils.training - INFO - Batch 1550: Raw fg ratio: 0.9543, Adaptive fg ratio: 0.2986
+2025-05-24 11:40:47,397 - utils.training - INFO - Batch 1550: GT fg ratio: 0.0564
+2025-05-24 11:40:47,397 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.30x
+2025-05-24 11:40:47,398 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:47,692 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:47,958 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:48,240 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:48,561 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:48,889 - utils.training - INFO - Batch 1600: Raw fg ratio: 0.9452, Adaptive fg ratio: 0.3033
+2025-05-24 11:40:48,890 - utils.training - INFO - Batch 1600: GT fg ratio: 0.0542
+2025-05-24 11:40:48,890 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.59x
+2025-05-24 11:40:48,890 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:49,189 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:49,515 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:49,822 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:50,113 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:50,403 - utils.training - INFO - Batch 1650: Raw fg ratio: 0.9638, Adaptive fg ratio: 0.3446
+2025-05-24 11:40:50,404 - utils.training - INFO - Batch 1650: GT fg ratio: 0.0563
+2025-05-24 11:40:50,404 - utils.training - WARNING - Still predicting too much foreground! Ratio: 6.12x
+2025-05-24 11:40:50,404 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:50,667 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:50,978 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:51,311 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:51,609 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:51,961 - utils.training - INFO - Batch 1700: Raw fg ratio: 0.9608, Adaptive fg ratio: 0.2548
+2025-05-24 11:40:51,961 - utils.training - INFO - Batch 1700: GT fg ratio: 0.4942
+2025-05-24 11:40:51,962 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 0.52x
+2025-05-24 11:40:51,962 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:52,275 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:52,568 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:52,877 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:53,175 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:53,454 - utils.training - INFO - Batch 1750: Raw fg ratio: 0.9476, Adaptive fg ratio: 0.2311
+2025-05-24 11:40:53,454 - utils.training - INFO - Batch 1750: GT fg ratio: 0.0443
+2025-05-24 11:40:53,454 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.21x
+2025-05-24 11:40:53,455 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:53,769 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:54,046 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:54,311 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:54,602 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:54,891 - utils.training - INFO - Batch 1800: Raw fg ratio: 0.9273, Adaptive fg ratio: 0.2419
+2025-05-24 11:40:54,892 - utils.training - INFO - Batch 1800: GT fg ratio: 0.0448
+2025-05-24 11:40:54,892 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.40x
+2025-05-24 11:40:54,892 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:55,202 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:55,510 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:55,797 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:56,104 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:56,391 - utils.training - INFO - Batch 1850: Raw fg ratio: 0.9431, Adaptive fg ratio: 0.2778
+2025-05-24 11:40:56,391 - utils.training - INFO - Batch 1850: GT fg ratio: 0.1023
+2025-05-24 11:40:56,392 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.72x
+2025-05-24 11:40:56,392 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:56,701 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:57,010 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:57,319 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:57,656 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:57,929 - utils.training - INFO - Batch 1900: Raw fg ratio: 0.9633, Adaptive fg ratio: 0.3124
+2025-05-24 11:40:57,930 - utils.training - INFO - Batch 1900: GT fg ratio: 0.0603
+2025-05-24 11:40:57,930 - utils.training - WARNING - Still predicting too much foreground! Ratio: 5.18x
+2025-05-24 11:40:57,930 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:58,199 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:58,489 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:58,760 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:59,068 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:59,341 - utils.training - INFO - Batch 1950: Raw fg ratio: 0.9598, Adaptive fg ratio: 0.3545
+2025-05-24 11:40:59,342 - utils.training - INFO - Batch 1950: GT fg ratio: 0.1455
+2025-05-24 11:40:59,342 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 2.44x
+2025-05-24 11:40:59,342 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:59,640 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:40:59,991 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:00,315 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:00,583 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:00,885 - utils.training - INFO - Batch 2000: Raw fg ratio: 0.9532, Adaptive fg ratio: 0.3236
+2025-05-24 11:41:00,886 - utils.training - INFO - Batch 2000: GT fg ratio: 0.5812
+2025-05-24 11:41:00,886 - utils.training - INFO - Foreground ratio looks good! Pred/GT ratio: 0.56x
+2025-05-24 11:41:00,886 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:01,198 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:01,558 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:01,859 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:02,160 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:02,440 - utils.training - INFO - Batch 2050: Raw fg ratio: 0.9107, Adaptive fg ratio: 0.1908
+2025-05-24 11:41:02,440 - utils.training - INFO - Batch 2050: GT fg ratio: 0.5147
+2025-05-24 11:41:02,441 - utils.training - WARNING - Predicting too little foreground! Ratio: 0.37x
+2025-05-24 11:41:02,441 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:02,735 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:03,020 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:03,315 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:03,653 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-24 11:41:03,753 - utils.training - INFO - Epoch 0 training - Loss: 1.7726

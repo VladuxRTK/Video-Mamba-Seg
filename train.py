@@ -232,13 +232,32 @@ def main():
         )
         step_scheduler_batch = True
         logger.info(f"Created OneCycleLR scheduler with max_lr={config['optimizer']['lr']}")
+   # With this improved version including warmup:
     elif config['scheduler']['type'] == 'cosine':
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        # Create a warmup scheduler followed by cosine annealing
+        warmup_epochs = 5  # 5 epochs of warmup
+        
+        main_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
-            T_max=config['training']['epochs'],
+            T_max=config['training']['epochs'] - warmup_epochs,
             eta_min=float(config['scheduler']['min_lr'])
         )
-        logger.info(f"Created CosineAnnealingLR scheduler")
+        
+        warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer, 
+            start_factor=0.1,  # Start at 10% of base LR
+            end_factor=1.0, 
+            total_iters=warmup_epochs
+        )
+        
+        # Combine schedulers
+        scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer, 
+            schedulers=[warmup_scheduler, main_scheduler], 
+            milestones=[warmup_epochs]
+        )
+    
+        logger.info(f"Created CosineAnnealingLR scheduler with {warmup_epochs} epochs of warmup")
     elif config['scheduler']['type'] == 'plateau':
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, 
