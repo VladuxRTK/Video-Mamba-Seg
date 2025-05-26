@@ -1,0 +1,93 @@
+2025-05-25 14:56:01,437 - __main__ - INFO - Starting Mamba-based binary video segmentation training
+2025-05-25 14:56:01,437 - __main__ - INFO - Using configuration from: configs/stable_binary.yaml
+2025-05-25 14:56:01,445 - __main__ - INFO - Set random seed to 42
+2025-05-25 14:56:01,684 - __main__ - INFO - Using device: cuda
+2025-05-25 14:56:01,684 - __main__ - INFO - Building Mamba-based binary segmentation model...
+2025-05-25 14:56:02,962 - __main__ - INFO - Model has 1,880,133 trainable parameters
+2025-05-25 14:56:03,031 - __main__ - INFO - Creating data loaders...
+2025-05-25 14:56:03,720 - __main__ - INFO - Created dataloaders - Train: 2094 batches, Val: 995 batches
+2025-05-25 14:56:03,720 - __main__ - INFO - Creating optimizer: AdamW
+2025-05-25 14:56:03,721 - __main__ - INFO - Created CosineAnnealingLR scheduler with 5 epochs of warmup
+2025-05-25 14:56:03,760 - __main__ - INFO - Starting training loop...
+2025-05-25 14:56:03,760 - utils.training - INFO - Starting training from epoch 0
+2025-05-25 14:56:03,761 - utils.training - INFO - Results will be saved to: checkpoints/stable_binary/results
+2025-05-25 14:56:04,294 - utils.training - INFO - Batch 0: Raw fg ratio: 0.3276, Adaptive fg ratio: 0.1947
+2025-05-25 14:56:04,295 - utils.training - INFO - Batch 0: GT fg ratio: 0.3881
+2025-05-25 14:56:04,295 - utils.training - INFO - Foreground ratio balanced! Pred/GT ratio: 0.50x
+2025-05-25 14:56:04,332 - utils.training - INFO - Total gradient norm: 11.8503
+2025-05-25 14:56:04,332 - utils.training - INFO - Gradient norm for temporal_smooth.weight: 5.5679
+2025-05-25 14:56:04,333 - utils.training - INFO - Gradient norm for seg_head.0.weight: 5.5440
+2025-05-25 14:56:04,333 - utils.training - INFO - Gradient norm for feature_fusion.fusion.0.weight: 3.5489
+2025-05-25 14:56:04,333 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 2.8602
+2025-05-25 14:56:04,333 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 2.6061
+2025-05-25 14:56:05,290 - utils.training - INFO - Total gradient norm: inf
+2025-05-25 14:56:05,290 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: inf
+2025-05-25 14:56:05,290 - utils.training - INFO - Gradient norm for seg_head.0.weight: 250368.5156
+2025-05-25 14:56:05,290 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 234351.3906
+2025-05-25 14:56:05,291 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 222383.2500
+2025-05-25 14:56:05,291 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 217218.7344
+2025-05-25 14:56:05,844 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:06,415 - utils.training - INFO - Total gradient norm: 353206.0803
+2025-05-25 14:56:06,416 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 185330.7344
+2025-05-25 14:56:06,416 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 121395.3359
+2025-05-25 14:56:06,416 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 114358.3594
+2025-05-25 14:56:06,416 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 103458.2812
+2025-05-25 14:56:06,417 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.3.weight: 93593.0938
+2025-05-25 14:56:07,015 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:07,646 - utils.training - INFO - Batch 50: Raw fg ratio: 0.2936, Adaptive fg ratio: 0.1665
+2025-05-25 14:56:07,646 - utils.training - INFO - Batch 50: GT fg ratio: 0.0366
+2025-05-25 14:56:07,646 - utils.training - WARNING - Overpredicting foreground! Ratio: 4.55x
+2025-05-25 14:56:07,652 - utils.training - INFO - Total gradient norm: 396127.3076
+2025-05-25 14:56:07,652 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 190071.8125
+2025-05-25 14:56:07,652 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 129777.4297
+2025-05-25 14:56:07,652 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 128691.5625
+2025-05-25 14:56:07,653 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 118864.0781
+2025-05-25 14:56:07,653 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.3.weight: 113299.9766
+2025-05-25 14:56:08,224 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:08,816 - utils.training - INFO - Total gradient norm: 425795.3499
+2025-05-25 14:56:08,817 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 215231.6875
+2025-05-25 14:56:08,817 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 142026.3750
+2025-05-25 14:56:08,817 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 133328.4531
+2025-05-25 14:56:08,817 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 128410.8281
+2025-05-25 14:56:08,817 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.3.weight: 121407.3516
+2025-05-25 14:56:09,405 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:10,120 - utils.training - INFO - Total gradient norm: 359271.9265
+2025-05-25 14:56:10,121 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 173143.3125
+2025-05-25 14:56:10,121 - utils.training - INFO - Gradient norm for seg_head.0.weight: 108002.8594
+2025-05-25 14:56:10,121 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 105619.4922
+2025-05-25 14:56:10,121 - utils.training - INFO - Gradient norm for backbone.mamba_blocks.2.mamba.in_proj.weight: 102128.0156
+2025-05-25 14:56:10,121 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 99243.4922
+2025-05-25 14:56:10,813 - utils.training - INFO - Batch 100: Raw fg ratio: 0.3231, Adaptive fg ratio: 0.1603
+2025-05-25 14:56:10,813 - utils.training - INFO - Batch 100: GT fg ratio: 0.0794
+2025-05-25 14:56:10,813 - utils.training - INFO - Foreground ratio balanced! Pred/GT ratio: 2.02x
+2025-05-25 14:56:10,814 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:11,451 - utils.training - INFO - Total gradient norm: 291250.0022
+2025-05-25 14:56:11,451 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 142631.1406
+2025-05-25 14:56:11,451 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 90904.7266
+2025-05-25 14:56:11,451 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 89346.3984
+2025-05-25 14:56:11,451 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 84911.1328
+2025-05-25 14:56:11,452 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.3.weight: 77999.7188
+2025-05-25 14:56:12,094 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:12,747 - utils.training - INFO - Total gradient norm: 498717.0844
+2025-05-25 14:56:12,748 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 224045.6562
+2025-05-25 14:56:12,748 - utils.training - INFO - Gradient norm for seg_head.0.weight: 156768.3281
+2025-05-25 14:56:12,748 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 144928.5938
+2025-05-25 14:56:12,748 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 140301.9531
+2025-05-25 14:56:12,748 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 132354.5000
+2025-05-25 14:56:13,395 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:14,038 - utils.training - INFO - Batch 150: Raw fg ratio: 0.3332, Adaptive fg ratio: 0.1889
+2025-05-25 14:56:14,039 - utils.training - INFO - Batch 150: GT fg ratio: 0.1339
+2025-05-25 14:56:14,039 - utils.training - INFO - Foreground ratio balanced! Pred/GT ratio: 1.41x
+2025-05-25 14:56:14,047 - utils.training - INFO - Total gradient norm: 371155.4527
+2025-05-25 14:56:14,047 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 186470.2188
+2025-05-25 14:56:14,047 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 125947.4062
+2025-05-25 14:56:14,048 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 123180.2422
+2025-05-25 14:56:14,048 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 113120.6172
+2025-05-25 14:56:14,048 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.3.weight: 104168.1172
+2025-05-25 14:56:14,736 - utils.training - INFO - Total gradient norm: 0.0000
+2025-05-25 14:56:15,401 - utils.training - INFO - Total gradient norm: 288578.4539
+2025-05-25 14:56:15,401 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.0.weight: 160472.9062
+2025-05-25 14:56:15,401 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.0.weight: 94519.9922
+2025-05-25 14:56:15,401 - utils.training - INFO - Gradient norm for backbone.down_blocks.0.3.weight: 90128.6094
+2025-05-25 14:56:15,402 - utils.training - INFO - Gradient norm for backbone.down_blocks.2.0.weight: 86194.5938
+2025-05-25 14:56:15,402 - utils.training - INFO - Gradient norm for backbone.down_blocks.1.3.weight: 79697.7734

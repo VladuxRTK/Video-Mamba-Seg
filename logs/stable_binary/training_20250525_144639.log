@@ -1,0 +1,13 @@
+2025-05-25 14:46:39,812 - __main__ - INFO - Starting Mamba-based binary video segmentation training
+2025-05-25 14:46:39,812 - __main__ - INFO - Using configuration from: configs/stable_binary.yaml
+2025-05-25 14:46:39,819 - __main__ - INFO - Set random seed to 42
+2025-05-25 14:46:40,060 - __main__ - INFO - Using device: cuda
+2025-05-25 14:46:40,060 - __main__ - INFO - Building Mamba-based binary segmentation model...
+2025-05-25 14:46:41,387 - __main__ - INFO - Model has 1,880,146 trainable parameters
+2025-05-25 14:46:41,430 - __main__ - INFO - Creating data loaders...
+2025-05-25 14:46:42,036 - __main__ - INFO - Created dataloaders - Train: 2094 batches, Val: 995 batches
+2025-05-25 14:46:42,036 - __main__ - INFO - Creating optimizer: AdamW
+2025-05-25 14:46:42,036 - __main__ - INFO - Created CosineAnnealingLR scheduler with 5 epochs of warmup
+2025-05-25 14:46:42,077 - __main__ - INFO - Starting training loop...
+2025-05-25 14:46:42,077 - utils.training - INFO - Starting training from epoch 0
+2025-05-25 14:46:42,077 - utils.training - INFO - Results will be saved to: checkpoints/stable_binary/results

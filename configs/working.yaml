@@ -1,0 +1,90 @@
+# configs/optimized.yaml
+# Optimized configuration based on training analysis
+# This should give significantly better performance
+
+# Model Configuration - Slightly larger for better capacity
+model:
+  input_dim: 3
+  hidden_dims: [32, 64, 128, 256]  # Added 4th layer for more capacity
+  d_state: 32                       # Increased from 16 for better temporal modeling
+  temporal_window: 4                # Increased from 3 for better context
+  dropout: 0.15                     # Increased slightly for regularization
+  d_conv: 4
+  expand: 2
+
+# Dataset Configuration - Improved for better learning
+dataset:
+  img_size: [320, 480]             # LARGER images for better features (was 240,320)
+  sequence_length: 4               # Longer sequences for better temporal learning
+  sequence_stride: 2
+  batch_size: 1                    # Keep at 1 due to larger images
+  num_workers: 4
+  augmentation:
+    scale_range: [0.7, 1.3]        # More aggressive scaling
+    rotation_range: [-15, 15]      # More rotation variation
+    brightness: 0.3                # More brightness variation
+    contrast: 0.3                  # More contrast variation
+    saturation: 0.3                # More saturation variation
+    hue: 0.15                      # More hue variation
+    p_flip: 0.5
+
+# Training Configuration - More aggressive and longer
+training:
+  epochs: 150                      # Much longer training (was 50)
+  mixed_precision: true
+  validate_every: 2
+  save_every: 10
+  gradient_accumulation_steps: 8   # LARGER effective batch size (was 2)
+  grad_clip_value: 1.0             # Higher clipping (was 0.1)
+  patience: 25                     # More patience for early stopping
+
+# Optimizer Configuration - MUCH HIGHER LEARNING RATE
+optimizer:
+  type: 'AdamW'
+  lr: 0.0002                       # 500x HIGHER than current (was 5e-5 effectively 4e-7)
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+
+# Scheduler Configuration - Better scheduling
+scheduler:
+  type: 'onecycle'                 # More effective than step
+  min_lr: 5e-6                     # Higher minimum (was 1e-6)
+
+# Loss Configuration - REBALANCED for better learning
+losses:
+  ce_weight: 0.3                   # REDUCED (was 1.0) - CE was learning too fast
+  dice_weight: 2.5                 # INCREASED (was 1.5) - Dice was stuck
+  boundary_weight: 1.0             # NEW - adds edge detection
+  temporal_weight: 0.5             # Temporal consistency
+
+# Paths
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/optimized'
+  logs: 'logs/optimized'
+  visualizations: 'visualizations/optimized'
+
+# Visualization Configuration
+visualization:
+  enabled: true
+  interval: 5                      # More frequent visualization
+  dir: 'visualizations/optimized'
+
+# Evaluation Configuration
+evaluation:
+  enabled: true
+  metrics: ["iou", "f1", "precision", "recall"]
+
+# Additional optimizations
+flow:
+  enabled: false                   # Keep disabled for now
+  
+# Memory optimization flags
+memory:
+  clear_cache_every: 50           # Clear CUDA cache every 50 batches
+  
+# Advanced training settings
+advanced:
+  warmup_epochs: 5                # Warm up learning rate
+  label_smoothing: 0.1            # Add label smoothing
+  mixup_alpha: 0.2               # Data augmentation mixing

@@ -1,0 +1,67 @@
+dataset:
+  augmentation:
+    brightness: 0.2
+    contrast: 0.2
+    hue: 0.1
+    p_flip: 0.5
+    rotation_range:
+    - -10
+    - 10
+    saturation: 0.2
+    scale_range:
+    - 0.8
+    - 1.2
+  batch_size: 2
+  img_size:
+  - 240
+  - 320
+  num_workers: 4
+  sequence_length: 3
+  sequence_stride: 2
+evaluation:
+  enabled: true
+  metrics:
+  - iou
+  - f1
+losses:
+  boundary_weight: 0.0
+  ce_weight: 1.0
+  dice_weight: 1.5
+  temporal_weight: 0.5
+model:
+  d_conv: 4
+  d_state: 16
+  dropout: 0.1
+  expand: 2
+  hidden_dims:
+  - 32
+  - 64
+  - 128
+  input_dim: 3
+  temporal_window: 3
+optimizer:
+  betas:
+  - 0.9
+  - 0.999
+  lr: 5.0e-05
+  type: AdamW
+  weight_decay: 0.01
+paths:
+  checkpoints: checkpoints/working
+  davis_root: /mnt/c/Datasets/DAVIS
+  logs: logs/working
+  visualizations: visualizations/working
+scheduler:
+  min_lr: 1.0e-06
+  type: step
+training:
+  epochs: 50
+  grad_clip_value: 0.1
+  gradient_accumulation_steps: 2
+  mixed_precision: true
+  save_every: 5
+  validate_every: 2
+visualization:
+  dir: visualizations/working
+  enabled: true
+  interval: 10
