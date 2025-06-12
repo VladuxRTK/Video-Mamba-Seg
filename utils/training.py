@@ -136,61 +136,129 @@ class Trainer:
                 writer = csv.writer(f)
                 writer.writerow(['epoch', 'val_loss', 'J_mean', 'F_mean', 'J&F', 'iou', 'f1', 'precision', 'recall', 'timestamp'])
     
+    # In utils/training.py, replace the _save_epoch_results method with this robust version:
+
     def _save_epoch_results(self, epoch: int, train_metrics: Dict, val_metrics: Dict = None):
-        """Save results from current epoch to files."""
+        """Save results from current epoch to files with error handling."""
         timestamp = datetime.datetime.now().isoformat()
         
-        # Save training metrics to CSV
-        with open(self.results_csv, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                epoch,
-                train_metrics.get('loss', 0),
-                train_metrics.get('ce_loss', 0),
-                train_metrics.get('dice_loss', 0),
-                train_metrics.get('boundary_loss', 0),
-                self.get_current_lr(),
-                timestamp
-            ])
-        
-        # Save validation metrics if available
-        if val_metrics:
-            with open(self.validation_csv, 'a', newline='') as f:
+        try:
+            # Save training metrics to CSV
+            with open(self.results_csv, 'a', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow([
                     epoch,
-                    val_metrics.get('val_loss', 0),
-                    val_metrics.get('J_mean', 0),
-                    val_metrics.get('F_mean', 0),
-                    val_metrics.get('J&F', 0),
-                    val_metrics.get('iou', 0),
-                    val_metrics.get('f1', 0),
-                    val_metrics.get('precision', 0),
-                    val_metrics.get('recall', 0),
+                    self._safe_float(train_metrics.get('loss', 0)),
+                    self._safe_float(train_metrics.get('ce_loss', 0)),
+                    self._safe_float(train_metrics.get('dice_loss', 0)),
+                    self._safe_float(train_metrics.get('boundary_loss', 0)),
+                    self._safe_float(self.get_current_lr()),
                     timestamp
                 ])
+        except Exception as e:
+            self.logger.error(f"Failed to save training metrics CSV: {e}")
         
-        # Update history
-        train_record = {'epoch': epoch, 'timestamp': timestamp, **train_metrics}
-        self.training_history.append(train_record)
+        try:
+            # Save validation metrics if available
+            if val_metrics:
+                with open(self.validation_csv, 'a', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow([
+                        epoch,
+                        self._safe_float(val_metrics.get('val_loss', 0)),
+                        self._safe_float(val_metrics.get('J_mean', 0)),
+                        self._safe_float(val_metrics.get('F_mean', 0)),
+                        self._safe_float(val_metrics.get('J&F', 0)),
+                        self._safe_float(val_metrics.get('iou', 0)),
+                        self._safe_float(val_metrics.get('f1', 0)),
+                        self._safe_float(val_metrics.get('precision', 0)),
+                        self._safe_float(val_metrics.get('recall', 0)),
+                        timestamp
+                    ])
+        except Exception as e:
+            self.logger.error(f"Failed to save validation metrics CSV: {e}")
         
-        if val_metrics:
-            val_record = {'epoch': epoch, 'timestamp': timestamp, **val_metrics}
-            self.validation_history.append(val_record)
+        try:
+            # Update history with safe conversion
+            train_record = {
+                'epoch': epoch, 
+                'timestamp': timestamp,
+                **{k: self._safe_float(v) for k, v in train_metrics.items()}
+            }
+            self.training_history.append(train_record)
+            
+            if val_metrics:
+                val_record = {
+                    'epoch': epoch, 
+                    'timestamp': timestamp,
+                    **{k: self._safe_float(v) for k, v in val_metrics.items()}
+                }
+                self.validation_history.append(val_record)
+        except Exception as e:
+            self.logger.error(f"Failed to update history: {e}")
         
-        # Save complete history to JSON
-        complete_results = {
-            'training_history': self.training_history,
-            'validation_history': self.validation_history,
-            'best_val_loss': float(self.best_val_loss),
-            'current_epoch': epoch,
-            'last_updated': timestamp
-        }
-        
-        with open(self.results_json, 'w') as f:
-            json.dump(complete_results, f, indent=2)
-        
-        self.logger.info(f"Results saved to {self.results_dir}")
+        try:
+            # Save complete history to JSON with safe conversion
+            complete_results = {
+                'training_history': self.training_history,
+                'validation_history': self.validation_history,
+                'best_val_loss': self._safe_float(self.best_val_loss),
+                'current_epoch': epoch,
+                'last_updated': timestamp
+            }
+            
+            # Write to temporary file first, then rename (atomic operation)
+            temp_file = self.results_json.with_suffix('.json.tmp')
+            with open(temp_file, 'w') as f:
+                json.dump(complete_results, f, indent=2, default=self._json_serializer)
+            
+            # Atomic rename
+            temp_file.rename(self.results_json)
+            
+            self.logger.info(f"Results saved to {self.results_dir}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to save JSON results: {e}")
+            # Try to save a minimal version
+            try:
+                minimal_results = {
+                    'current_epoch': epoch,
+                    'last_updated': timestamp,
+                    'error': f"Full save failed: {str(e)}"
+                }
+                with open(self.results_json, 'w') as f:
+                    json.dump(minimal_results, f, indent=2)
+            except Exception as e2:
+                self.logger.error(f"Failed to save minimal JSON: {e2}")
+
+    def _safe_float(self, value):
+        """Safely convert value to float, handling tensors and edge cases."""
+        try:
+            if hasattr(value, 'item'):
+                val = value.item()
+            else:
+                val = float(value)
+            
+            # Handle NaN and infinity
+            if np.isnan(val) or np.isinf(val):
+                return 0.0
+            return val
+        except (ValueError, TypeError):
+            return 0.0
+
+    def _json_serializer(self, obj):
+        """Custom JSON serializer for handling special types."""
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.int64, np.int32)):
+            return int(obj)
+        elif isinstance(obj, (np.float64, np.float32)):
+            val = float(obj)
+            return 0.0 if (np.isnan(val) or np.isinf(val)) else val
+        elif hasattr(obj, 'item'):  # Torch tensor
+            return obj.item()
+        else:
+            return str(obj)  # Fallback to string representation
 
     def train_epoch(self, train_loader):
         """Run a single training epoch with emergency LR fix and memory optimizations."""

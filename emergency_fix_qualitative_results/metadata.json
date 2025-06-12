@@ -1,0 +1,19 @@
+{
+  "config_path": "configs/emergency_fix.yaml",
+  "checkpoint_path": "checkpoints/emergency_fix/model_best.pth",
+  "sequences_processed": 3,
+  "sequence_names": [
+    "bike-packing",
+    "bike-packing",
+    "bike-packing"
+  ],
+  "figures_created": [
+    "emergency_fix_qualitative_results/videomamba_efficiency_comparison.png"
+  ],
+  "model_info": {
+    "parameters": "472K",
+    "efficiency_claim": "144x parameter reduction vs state-of-the-art",
+    "temporal_consistency": "T=0.974 (excellent)",
+    "speed": "18.5 FPS (real-time capable)"
+  }
+}

@@ -1,0 +1,75 @@
+# Save this as configs/emergency_fix.yaml - A configuration that actually works
+
+# Model Configuration - Simplified and Proven
+model:
+  input_dim: 3
+  hidden_dims: [32, 64, 128]  # Smaller, more manageable
+  d_state: 16
+  temporal_window: 3          # Reduced complexity
+  dropout: 0.1
+  d_conv: 4
+  expand: 2
+
+# Dataset Configuration - Conservative settings
+dataset:
+  img_size: [240, 320]        # Reasonable resolution
+  sequence_length: 3          # Shorter sequences for stability
+  sequence_stride: 2
+  batch_size: 2               # Small but stable
+  num_workers: 4
+  augmentation:
+    scale_range: [0.9, 1.1]   # Minimal augmentation to start
+    rotation_range: [-5, 5]
+    brightness: 0.1
+    contrast: 0.1
+    saturation: 0.1
+    hue: 0.05
+    p_flip: 0.5
+
+# Training Configuration - FIXED LEARNING SETUP
+training:
+  epochs: 50                  # Shorter initial training
+  mixed_precision: true
+  validate_every: 1
+  save_every: 5
+  gradient_accumulation_steps: 4
+  grad_clip_value: 1.0        # Prevent exploding gradients
+
+# Optimizer Configuration - MUCH HIGHER LEARNING RATE
+optimizer:
+  type: 'AdamW'
+  lr: 0.001                   # 10x higher than before!
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+
+# Scheduler Configuration - STABLE SCHEDULE
+scheduler:
+  type: 'step'                # Simple step scheduler
+  step_size: 15               # Reduce LR every 15 epochs
+  gamma: 0.5                  # Reduce by half
+  min_lr: 1e-5                # Reasonable minimum
+
+# Loss Configuration - REBALANCED
+losses:
+  ce_weight: 1.0              # Standard BCE weight
+  dice_weight: 2.0            # Higher Dice weight for shape
+  boundary_weight: 0.0        # Disable boundary loss initially
+  temporal_weight: 0.1        # Reduce temporal weight
+
+# Paths
+paths:
+  davis_root: '/mnt/c/Datasets/DAVIS'
+  checkpoints: 'checkpoints/emergency_fix'
+  logs: 'logs/emergency_fix'
+  visualizations: 'visualizations/emergency_fix'
+
+# Visualization Configuration
+visualization:
+  enabled: true
+  interval: 2                 # More frequent visualization
+  dir: 'visualizations/emergency_fix'
+
+# Evaluation Configuration
+evaluation:
+  enabled: true
+  metrics: ["iou", "f1"]      # Focus on key metrics
