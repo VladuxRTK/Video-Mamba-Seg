@@ -1,0 +1,47 @@
+dataset:
+  img_size:
+  - 240
+  - 320
+  num_workers: 4
+  sequence_length: 3
+  sequence_stride: 2
+model:
+  d_conv: 4
+  d_state: 16
+  dropout: 0.1
+  expand: 2
+  hidden_dims:
+  - 32
+  - 64
+  - 128
+  input_dim: 3
+  temporal_window: 4
+paths:
+  checkpoints: checkpoints
+  davis_root: /mnt/c/Datasets/DAVIS
+  visualizations: visualizations
+qualitative:
+  colors:
+    background:
+    - 128
+    - 128
+    - 128
+    ground_truth:
+    - 255
+    - 0
+    - 0
+    overlap:
+    - 255
+    - 255
+    - 0
+    prediction:
+    - 0
+    - 255
+    - 0
+  figure_dpi: 300
+  max_sequences_full: 20
+  max_sequences_quick: 6
+  output_formats:
+  - png
+  - pdf
+  video_fps: 10
